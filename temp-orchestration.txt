@@ -1,0 +1,34 @@
+import subprocess
+import os
+
+def deploy_project(project_name, git_repo):
+    # Clone or pull the project
+    if not os.path.exists(project_name):
+        subprocess.run(['git', 'clone', git_repo, project_name])
+    else:
+        subprocess.run(['git', '-C', project_name, 'pull'])
+    
+    # Change to project directory
+    os.chdir(project_name)
+    
+    # Run the start script
+    result = subprocess.run(['./scripts/start_project.sh'], capture_output=True, text=True)
+    
+    # Parse the output to get the ports
+    backend_port = None
+    frontend_port = None
+    for line in result.stdout.splitlines():
+        if "Backend running on port" in line:
+            backend_port = line.split()[-1]
+        elif "Frontend running on port" in line:
+            frontend_port = line.split()[-1]
+    
+    print(f"Project {project_name} deployed:")
+    print(f"Backend: http://localhost:{backend_port}")
+    print(f"Frontend: http://localhost:{frontend_port}")
+    
+    # Change back to original directory
+    os.chdir('..')
+
+# Usage
+deploy_project("my-awesome-project", "https://github.com/yourusername/my-awesome-project.git")
