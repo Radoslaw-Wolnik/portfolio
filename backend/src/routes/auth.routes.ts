@@ -1,5 +1,7 @@
 // src/routes/authRoutes.ts
 import express, { Router } from 'express';
+import { authenticateJWT, handlePostRegistrationAuth } from '../middleware/auth.middleware.js';
+import { isAdmin } from '../middleware/role.middleware';
 import { 
     register, 
     login, 
@@ -12,9 +14,10 @@ import {
     
     changePassword,
     requestPasswordReset,
-    resetPassword
+    resetPassword,
+    createOwner
 } from '../controllers/auth.controller.js';
-import { authenticateJWT, handlePostRegistrationAuth } from '../middleware/auth.middleware.js';
+
 
 const router: Router = express.Router();
 
@@ -34,5 +37,8 @@ router.get('/verify-email/:token', verifyEmail);
 router.put('/change-password', authenticateJWT, changePassword);
 router.post('/request-password-reset', requestPasswordReset);
 router.post('/reset-password/:token', resetPassword);
+
+// Route to create owner account (admin only)
+router.post('/create-owner', authenticateJWT, isAdmin, createOwner);
 
 export default router;

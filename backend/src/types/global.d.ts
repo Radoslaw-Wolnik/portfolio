@@ -2,7 +2,7 @@
 
 import { Request } from 'express';
 import { Types } from 'mongoose';
-import { IUserDocument } from '../src/models/user.model';
+import { IUserDocument } from '../models/user.model';
 
 
 declare global {
@@ -19,6 +19,17 @@ declare global {
     files?: {
       [fieldname: string]: Express.Multer.File[];
     } | Express.Multer.File[];
+  }
+
+  interface PaymentInitializationResult {
+    success: boolean;
+    transactionId: string;
+    paymentUrl?: string;
+  }
+  
+  interface PaymentVerificationResult {
+    success: boolean;
+    orderId: string;
   }
 
 }

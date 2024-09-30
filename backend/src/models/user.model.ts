@@ -6,24 +6,38 @@ import isEmail from 'validator/lib/isEmail';
 
 export interface IUserDocument extends Document {
   _id: Types.ObjectId;
+  isAnonymous: boolean;
   username: string;
   email: string;
   emailHash: string;
   password: string;
+  FirstName: string;
+  LastName: string;
+  Phone?: string;
   profilePicture?: string;
   isVerified: boolean;
   verificationToken?: string;
   verificationTokenExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  oneTimeLoginToken?: string;
+  oneTimeLoginExpires?: Date;
+  deactivationToken?: string;
+  deactivationExpires?: Date;
   role: 'client' | 'owner' | 'admin';
   createdAt: Date;
   updatedAt: Date;
   wishlist: Types.ObjectId[];
+  shippingAddresses: Types.ObjectId[];
   notificationPreferences: {
-    promotions: boolean;
+    email: boolean;
+    //promotions: boolean;
     newsletters: boolean;
+    orderupdates: boolean;
   };
+  
+  lastTimeActive: Date;
+  deactivated?: Date;
   getDecryptedEmail(): Promise<string>;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -34,10 +48,11 @@ export interface IUserModel extends Model<IUserDocument> {
 }
 
 const userSchema = new mongoose.Schema<IUserDocument, IUserModel>({
+  isAnonymous: { type: Boolean, default: false },
   username: { 
     type: String, 
-    required: true, 
     unique: true,
+    sparse: true, // Allows null values and ensures uniqueness for non-null values
     trim: true,
     minlength: [3, 'Username must be at least 3 characters long'],
     maxlength: [30, 'Username cannot exceed 30 characters'],
@@ -55,9 +70,48 @@ const userSchema = new mongoose.Schema<IUserDocument, IUserModel>({
   emailHash: { type: String, index: true, unique: true }, // For faster lookups
   password: { 
     type: String, 
-    required: true,
     minlength: [8, 'Password must be at least 8 characters long']
    },
+   FirstName: { 
+    type: String, 
+    required: true, 
+    trim: true, // Removes extra spaces
+    minlength: 2, // Set a minimum length
+    maxlength: 50, // Set a maximum length
+    match: /^[a-zA-Zà-žÀ-Ž\s'-]+$/, // Allow letters (with accents), spaces, hyphens, and apostrophes
+    validate: {
+      validator: function(v) {
+        return /^[a-zA-Zà-žÀ-Ž\s'-]+$/.test(v);
+      },
+      message: props => `${props.value} contains invalid characters!`
+    }
+  },
+  LastName: { 
+    type: String, 
+    required: true, 
+    trim: true,
+    minlength: 2,
+    maxlength: 50,
+    match: /^[a-zA-Zà-žÀ-Ž\s'-]+$/,
+    validate: {
+      validator: function(v) {
+        return /^[a-zA-Zà-žÀ-Ž\s'-]+$/.test(v);
+      },
+      message: props => `${props.value} contains invalid characters!`
+    }
+  },
+  Phone: { 
+    type: String, 
+    // required: true, // If you want to make the phone mandatory
+    trim: true,
+    match: /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/, // Allows international format, spaces, dashes, etc.
+    validate: {
+      validator: function(v) {
+        return /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/.test(v) && v.length >= 9 && v.length <= 15;
+      },
+      message: props => `${props.value} is not a valid phone number!`
+    }
+  },
   profilePicture: { 
     type: String,
     validate: {
@@ -73,12 +127,22 @@ const userSchema = new mongoose.Schema<IUserDocument, IUserModel>({
   resetPasswordToken: { type: String },
   resetPasswordExpires: Date,
 
+  oneTimeLoginToken: { type: String },
+  oneTimeLoginExpires: Date,
+  deactivationToken: { type: String },
+  deactivationExpires: Date,
+
   role: { type: String, enum: ['client', 'owner', 'admin'], default: 'client' },
   wishlist: [{ type: Types.ObjectId, ref: 'Product' }],
+  shippingAddresses: [{ type: Types.ObjectId, ref: 'Address' }],
   notificationPreferences: {
-    promotions: { type: Boolean, default: false },
+    email: { type: Boolean, default: true },
+    //promotions: { type: Boolean, default: false },
     newsletters: { type: Boolean, default: false },
+    orderUpdates: { type: Boolean, default: true },
   },
+
+  lastTimeActive: Date,
 },
   { timestamps: true }
 );
@@ -131,6 +195,4 @@ userSchema.methods.comparePassword = async function(this: IUserDocument, candida
   }
 };
 
-const User = mongoose.model<IUserDocument, IUserModel>('User', userSchema);
-
-export default User;
+export default mongoose.model<IUserDocument, IUserModel>('User', userSchema);

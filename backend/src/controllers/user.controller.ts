@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import path from 'path';
 
 import User from '../models/user.model';
-import { ValidationError, UnauthorizedError, NotFoundError, UploadError, InternalServerError, CustomError } from '../utils/custom-errors.util';
+import { ValidationError, UnauthorizedError, NotFoundError, InternalServerError, CustomError } from '../utils/custom-errors.util';
 import { deleteFileFromStorage } from '../utils/delete-file.util';
 import logger from '../utils/logger.util';
 
@@ -77,44 +77,19 @@ export const getOtherUserProfile = async (req: Request, res: Response, next: Nex
 
 export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findByIdAndUpdate(req.user!.id, req.body, { new: true }).select('-password');
-    if (!user) {
+    
+    if (!req.user) {
+      throw new UnauthorizedError('User not authenticated');
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, req.body, { new: true, runValidators: true }).select('-password');
+    if (!updatedUser) {
       throw new NotFoundError('User');
     }
-    res.json(user);
+
+    logger.info('User profile updated', { userId: req.user._id });
+    res.json(updatedUser);
   } catch (error) {
     next(error instanceof CustomError ? error : new InternalServerError('Error updating user profile'));
-  }
-};
-
-export const addToWishlist = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.user!.id,
-      { $addToSet: { wishlist: req.body.productId } },
-      { new: true }
-    ).select('-password');
-    if (!user) {
-      throw new NotFoundError('User');
-    }
-    res.json(user);
-  } catch (error) {
-    next(error instanceof CustomError ? error : new InternalServerError('Error adding product to wishlist'));
-  }
-};
-
-export const removeFromWishlist = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.user!.id,
-      { $pull: { wishlist: req.params.productId } },
-      { new: true }
-    ).select('-password');
-    if (!user) {
-      throw new NotFoundError('User');
-    }
-    res.json(user);
-  } catch (error) {
-    next(error instanceof CustomError ? error : new InternalServerError('Error removing product from wishlist'));
   }
 };

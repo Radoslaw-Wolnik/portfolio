@@ -1,3 +1,4 @@
+// src/config/email.config.ts
 import { getEnvValue } from './get-env-value';
 
 export interface EmailConfig {
