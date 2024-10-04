@@ -6,7 +6,6 @@ import isEmail from 'validator/lib/isEmail';
 
 export interface IUserDocument extends Document {
   _id: Types.ObjectId;
-  isAnonymous: boolean;
   username: string;
   email: string;
   emailHash: string;
@@ -27,14 +26,6 @@ export interface IUserDocument extends Document {
   role: 'client' | 'admin';
   createdAt: Date;
   updatedAt: Date;
-  wishlist: Types.ObjectId[];
-  shippingAddresses: Types.ObjectId[];
-  notificationPreferences: {
-    email: boolean;
-    //promotions: boolean;
-    newsletters: boolean;
-    orderupdates: boolean;
-  };
   
   lastTimeActive: Date;
   deactivated?: Date;
@@ -48,7 +39,6 @@ export interface IUserModel extends Model<IUserDocument> {
 }
 
 const userSchema = new mongoose.Schema<IUserDocument, IUserModel>({
-  isAnonymous: { type: Boolean, default: false },
   username: { 
     type: String, 
     unique: true,
@@ -133,14 +123,6 @@ const userSchema = new mongoose.Schema<IUserDocument, IUserModel>({
   deactivationExpires: Date,
 
   role: { type: String, enum: ['client', 'admin'], default: 'client' },
-  wishlist: [{ type: Types.ObjectId, ref: 'Product' }],
-  shippingAddresses: [{ type: Types.ObjectId, ref: 'Address' }],
-  notificationPreferences: {
-    email: { type: Boolean, default: true },
-    //promotions: { type: Boolean, default: false },
-    newsletters: { type: Boolean, default: false },
-    orderUpdates: { type: Boolean, default: true },
-  },
 
   lastTimeActive: Date,
 },

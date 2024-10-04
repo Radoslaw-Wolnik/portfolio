@@ -1,15 +1,17 @@
-// project-demo.routes.ts
 import express from 'express';
-import { 
-  startOrJoinProjectDemo, 
-  getProjectDemoStatus, 
-  leaveProjectDemo 
+import { authenticateDemoSession } from '../middleware/auth.middleware';
+import {
+  startOrJoinProjectDemo,
+  getProjectDemoStatus,
+  leaveProjectDemo,
+  switchRole
 } from '../controllers/project-demo.controller';
 
 const router = express.Router();
 
 router.post('/start-or-join', startOrJoinProjectDemo);
-router.post('/leave', leaveProjectDemo);
-router.get('/:sessionId/status', getProjectDemoStatus);
+router.get('/:sessionId/status', authenticateDemoSession, getProjectDemoStatus);
+router.post('/:sessionId/leave', authenticateDemoSession, leaveProjectDemo);
+router.post('/:sessionId/switch-role', authenticateDemoSession, switchRole);
 
 export default router;

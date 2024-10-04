@@ -1,40 +1,82 @@
-import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
+import { Server as HttpServer } from 'http';
+import logger from '../utils/logger.util';
+import environment from '../config/environment';
 
-export class WebSocketService {
+export enum ContainerStatus {
+  CREATING = 'creating',
+  STARTING = 'starting',
+  RUNNING = 'running',
+  STOPPING = 'stopping',
+  STOPPED = 'stopped',
+  ERROR = 'error'
+}
+
+interface StatusUpdate {
+  status: ContainerStatus;
+  message: string;
+  containerId?: string;
+  error?: string;
+}
+
+class WebSocketService {
   private io: Server;
 
-  constructor(server: HttpServer) {
-    this.io = new Server(server, {
+  constructor(httpServer: HttpServer) {
+    this.io = new Server(httpServer, {
       cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        methods: ["GET", "POST"]
-      }
+        origin: environment.app.frontendUrl,
+        methods: ['GET', 'POST'],
+      },
     });
 
     this.io.on('connection', (socket: Socket) => {
-      console.log('New client connected');
-      
+      logger.info('New WebSocket connection established', { socketId: socket.id });
+
+      socket.on('joinSession', (sessionId: string) => {
+        socket.join(sessionId);
+        logger.info(`Socket joined session: ${sessionId}`, { socketId: socket.id });
+      });
+
+      socket.on('leaveSession', (sessionId: string) => {
+        socket.leave(sessionId);
+        logger.info(`Socket left session: ${sessionId}`, { socketId: socket.id });
+      });
+
       socket.on('disconnect', () => {
-        console.log('Client disconnected');
+        logger.info('WebSocket connection closed', { socketId: socket.id });
       });
     });
   }
 
-  public sendUpdate(sessionId: string, status: string) {
-    this.io.emit(`session-update-${sessionId}`, { status });
+  emitContainerStatus(sessionId: string, update: StatusUpdate): void {
+    try {
+      this.io.to(sessionId).emit('containerStatus', update);
+      logger.info(`Emitted container status update for ${sessionId}`, { update });
+    } catch (error) {
+      logger.error(`Error emitting container status for ${sessionId}`, { error });
+    }
+  }
+
+  emitSessionUpdate(sessionId: string, data: any): void {
+    try {
+      this.io.to(sessionId).emit('sessionUpdate', data);
+      logger.info(`Emitted session update for ${sessionId}`, { data });
+    } catch (error) {
+      logger.error(`Error emitting session update for ${sessionId}`, { error });
+    }
   }
 }
 
 let webSocketService: WebSocketService;
 
-export const initializeWebSocketService = (server: HttpServer) => {
-  webSocketService = new WebSocketService(server);
+export const initializeWebSocketService = (httpServer: HttpServer): void => {
+  webSocketService = new WebSocketService(httpServer);
 };
 
-export const getWebSocketService = () => {
+export const getWebSocketService = (): WebSocketService => {
   if (!webSocketService) {
-    throw new Error('WebSocketService not initialized');
+    throw new Error('WebSocket service not initialized');
   }
   return webSocketService;
 };

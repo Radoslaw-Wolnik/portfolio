@@ -1,28 +1,44 @@
-// src/config/environment.ts
+import dotenv from 'dotenv';
 
-import { databaseConfig, DatabaseConfig } from './database.config';
-import { authConfig, AuthConfig } from './auth.config';
-import { emailConfig, EmailConfig } from './email.config';
-import { appConfig, AppConfig } from './app.config';
-import { EmailService } from '../services/email.service';
+dotenv.config();
 
-interface Enviorement {
-  database: DatabaseConfig;
-  auth: AuthConfig;
-  email: EmailConfig & {
-    service: EmailService
-  }
-  app: AppConfig;
-}
-
-export const environment: Enviorement = {
-  database: databaseConfig,
-  auth: authConfig,
-  email: { 
-    ...emailConfig,
-    service: EmailService.getInstance(), 
+const environment = {
+  app: {
+    port: process.env.PORT || 3000,
+    nodeEnv: process.env.NODE_ENV || 'development',
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+    company: {
+      name: process.env.COMPANY_NAME || 'My Company',
+      email: process.env.COMPANY_EMAIL || 'info@mycompany.com',
+      phone: process.env.COMPANY_PHONE || '+1234567890',
+      address: {
+        street: process.env.COMPANY_STREET || '123 Main St',
+        city: process.env.COMPANY_CITY || 'Anytown',
+        state: process.env.COMPANY_STATE || 'ST',
+        zip: process.env.COMPANY_ZIP || '12345',
+        country: process.env.COMPANY_COUNTRY || 'USA'
+      }
+    }
   },
-  app: appConfig,
+  database: {
+    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/myapp',
+  },
+  auth: {
+    jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
+    encryptionKey: process.env.ENCRYPTION_KEY || 'your-encryption-key',
+    demoProjectSecret: process.env.DEMO_SECRET || 'your-projects-secret',
+  },
+  email: {
+    host: process.env.EMAIL_HOST || 'smtp.example.com',
+    port: parseInt(process.env.EMAIL_PORT || '587', 10),
+    user: process.env.EMAIL_USER || 'user@example.com',
+    password: process.env.EMAIL_PASSWORD || 'password',
+    from: process.env.EMAIL_FROM || 'noreply@example.com'
+  },
+  docker: {
+    socketPath: process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock'
+  }
 };
 
 export default environment;

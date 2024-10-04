@@ -1,20 +1,11 @@
-// cleanup.service.ts
-import Docker from 'dockerode';
+import { dockerService } from '../services/docker.service';
+import logger from '../utils/logger.util';
 
-const docker = new Docker();
-
-export class CleanupService {
-  async cleanupContainers() {
-    const containers = await docker.listContainers({ all: true });
-    
-    for (const container of containers) {
-      if (container.Names[0].startsWith('/portfolio-demo-') && !container.Names[0].includes('-base-')) {
-        const containerInstance = docker.getContainer(container.Id);
-        await containerInstance.stop();
-        await containerInstance.remove();
-      }
-    }
+export const cleanupContainers = async () => {
+  try {
+    const cleanedContainers = await dockerService.cleanupInactiveContainers();
+    logger.info(`Cleaned up ${cleanedContainers.length} inactive containers`);
+  } catch (error) {
+    logger.error('Error cleaning up containers:', error);
   }
-}
-
-export const cleanupService = new CleanupService();
+};

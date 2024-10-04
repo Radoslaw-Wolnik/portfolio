@@ -14,9 +14,9 @@ const router = express.Router();
 router.get('/', getBlogPosts);
 router.get('/:id', getBlogPostById);
 
-router.use(authenticateJWT, isAdmin);
-router.post('/', createBlogPost);
-router.put('/:id', updateBlogPost);
-router.delete('/:id', deleteBlogPost);
+router.use(authenticateJWT);
+router.post('/', isAdmin, createBlogPost);
+router.put('/:id', isAdmin, updateBlogPost);
+router.delete('/:id', isAdmin, deleteBlogPost);
 
 export default router;

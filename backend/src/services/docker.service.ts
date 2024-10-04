@@ -1,68 +1,126 @@
-// docker.service.ts
 import Docker from 'dockerode';
-import fs from 'fs/promises';
-import yaml from 'js-yaml';
-import { getWebSocketService } from './websocket.service';
+import logger from '../utils/logger.util';
+import environment from '../config/environment';
+import { getWebSocketService, ContainerStatus } from './websocket.service';
 
-const docker = new Docker();
 
-export class DockerService {
-  async createBaseImage(projectName: string): Promise<string> {
-    const composeFile = await fs.readFile(`./docker-compose/${projectName}.yml`, 'utf8');
-    const composeConfig = yaml.load(composeFile) as any;
+class DockerService {
+  private docker: Docker;
 
-    const baseImageName = `portfolio-demo-base-${projectName}:latest`;
-
-    await docker.buildImage({
-      context: composeConfig.services.app.build.context,
-      src: ['Dockerfile', ...composeConfig.services.app.build.dockerfile]
-    }, { t: baseImageName });
-
-    return baseImageName;
-  }
-
-  async ensureBaseImageExists(projectName: string): Promise<string> {
-    const baseImageName = `portfolio-demo-base-${projectName}:latest`;
-    try {
-      await docker.getImage(baseImageName).inspect();
-      return baseImageName;
-    } catch (error) {
-      return this.createBaseImage(projectName);
-    }
+  constructor() {
+    this.docker = new Docker({ socketPath: environment.docker.socketPath });
   }
 
   async createContainer(projectName: string, sessionId: string): Promise<string> {
     const webSocketService = getWebSocketService();
-    
     try {
-      webSocketService.sendUpdate(sessionId, 'Ensuring base image exists');
-      const baseImageName = await this.ensureBaseImageExists(projectName);
-
-      webSocketService.sendUpdate(sessionId, 'Creating container from base image');
-      const container = await docker.createContainer({
-        Image: baseImageName,
-        name: `portfolio-demo-${projectName}-${sessionId}`,
-        Env: [/* Add any necessary environment variables */],
-        HostConfig: {
-          AutoRemove: true, // Automatically remove the container when it's stopped
-        }
+      webSocketService.emitContainerStatus(sessionId, { 
+        status: ContainerStatus.CREATING, 
+        message: 'Creating container' 
       });
 
-      webSocketService.sendUpdate(sessionId, 'Starting container');
-      await container.start();
+      const container = await this.docker.createContainer({
+        Image: `portfolio-demo-${projectName}:latest`,
+        name: `portfolio-demo-${projectName}-${sessionId}`,
+        Env: [
+          `AUTH_SECRET=${environment.auth.demoProjectSecret}`,
+        ],
+        HostConfig: {
+          AutoRemove: true,
+          PortBindings: {
+            '3000/tcp': [{ HostPort: '0' }] // Dynamically assign a port
+          },
+          ExtraHosts: ['host.docker.internal:host-gateway'], // This allows the container to access the host machine
+        },
+      });
 
-      webSocketService.sendUpdate(sessionId, 'Container ready');
+      webSocketService.emitContainerStatus(sessionId, { 
+        status: ContainerStatus.STARTING, 
+        message: 'Starting container' 
+      });
+
+      await container.start();
+      const containerInfo = await container.inspect();
+      const port = containerInfo.NetworkSettings.Ports['3000/tcp'][0].HostPort;
+
+      webSocketService.emitContainerStatus(sessionId, { 
+        status: ContainerStatus.RUNNING, 
+        message: 'Container running',
+        containerId: container.id
+      });
+
+      logger.info(`Container created and started: ${container.id}, Port: ${port}`);
       return container.id;
     } catch (error) {
-      webSocketService.sendUpdate(sessionId, `Error: ${(error as Error).message}`);
+      webSocketService.emitContainerStatus(sessionId, { 
+        status: ContainerStatus.ERROR, 
+        message: 'Error creating container',
+        error: (error as Error).message
+      });
+      logger.error('Error creating container:', error);
       throw error;
     }
   }
 
   async stopContainer(containerId: string): Promise<void> {
-    const container = docker.getContainer(containerId);
-    await container.stop();
-    // No need to remove the container as it's set to auto-remove
+    try {
+      const container = this.docker.getContainer(containerId);
+      await container.stop();
+      logger.info(`Container stopped: ${containerId}`);
+    } catch (error) {
+      logger.error(`Error stopping container ${containerId}:`, error);
+      throw error;
+    }
+  }
+
+  async getContainerPort(containerId: string): Promise<string> {
+    try {
+      const container = this.docker.getContainer(containerId);
+      const containerInfo = await container.inspect();
+      return containerInfo.NetworkSettings.Ports['3000/tcp'][0].HostPort;
+    } catch (error) {
+      logger.error(`Error getting container port for ${containerId}:`, error);
+      throw error;
+    }
+  }
+
+  async cleanupInactiveContainers(): Promise<string[]> {
+    try {
+      const containers = await this.docker.listContainers({ all: true });
+      const inactiveContainers = containers.filter(
+        (container) => container.State === 'exited' && container.Names[0].startsWith('/portfolio-demo-')
+      );
+
+      const removedContainers: string[] = [];
+      for (const container of inactiveContainers) {
+        await this.docker.getContainer(container.Id).remove();
+        removedContainers.push(container.Id);
+      }
+
+      logger.info(`Cleaned up ${removedContainers.length} inactive containers`);
+      return removedContainers;
+    } catch (error) {
+      logger.error('Error cleaning up inactive containers:', error);
+      throw error;
+    }
+  }
+
+  async createBaseImage(projectName: string): Promise<void> {
+    try {
+      const stream = await this.docker.buildImage({
+        context: `./docker-compose/${projectName}`,
+        src: ['Dockerfile'],
+      }, { t: `portfolio-demo-${projectName}:latest` });
+
+      await new Promise((resolve, reject) => {
+        this.docker.modem.followProgress(stream, (err: Error | null, res: any[] | null) => err ? reject(err) : resolve(res));
+      });
+
+      logger.info(`Base image created for project: ${projectName}`);
+    } catch (error) {
+      logger.error(`Error creating base image for project ${projectName}:`, error);
+      throw error;
+    }
   }
 }
 
