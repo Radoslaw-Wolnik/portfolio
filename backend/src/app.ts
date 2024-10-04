@@ -12,8 +12,12 @@ import userRoutes from './routes/user.routes';
 import jobRoutes from './routes/job.routes';
 import siteSettingsRoutes from './routes/site-settings.routes';
 
+import blogRoutes from './routes/blog.routes';
+import dockerSessionRoutes from './routes/docker-session.routes';
+
 import { errorHandler } from './middleware/error.middleware';
 import { addRequestId } from './middleware/request-id.middleware';
+import { initializeWebSocketService } from './services/websocket.service';
 
 
 
@@ -51,6 +55,8 @@ if (environment.app.nodeEnv === 'development') {
   });
 }
 
+initializeWebSocketService(server);
+
 // Create a router to group all routes under /api
 const apiRouter = express.Router();
 
@@ -61,6 +67,8 @@ apiRouter.use('/users', userRoutes);
 apiRouter.use('/health', healthRoutes);
 apiRouter.use('/jobs', jobRoutes);
 apiRouter.use('/site-settings', siteSettingsRoutes);
+apiRouter.use('/blog', blogRoutes);
+apiRouter.use('/docker-sessions', dockerSessionRoutes);
 
 // Mount the router on the /api path
 app.use('/api', apiRouter);

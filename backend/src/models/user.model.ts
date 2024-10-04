@@ -24,7 +24,7 @@ export interface IUserDocument extends Document {
   oneTimeLoginExpires?: Date;
   deactivationToken?: string;
   deactivationExpires?: Date;
-  role: 'client' | 'owner' | 'admin';
+  role: 'client' | 'admin';
   createdAt: Date;
   updatedAt: Date;
   wishlist: Types.ObjectId[];
@@ -132,7 +132,7 @@ const userSchema = new mongoose.Schema<IUserDocument, IUserModel>({
   deactivationToken: { type: String },
   deactivationExpires: Date,
 
-  role: { type: String, enum: ['client', 'owner', 'admin'], default: 'client' },
+  role: { type: String, enum: ['client', 'admin'], default: 'client' },
   wishlist: [{ type: Types.ObjectId, ref: 'Product' }],
   shippingAddresses: [{ type: Types.ObjectId, ref: 'Address' }],
   notificationPreferences: {
