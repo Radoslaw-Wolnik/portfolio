@@ -12,6 +12,10 @@ export interface IDockerSessionDocument extends Document {
   ipAddress: string;
   startTime: Date;
   endTime?: Date;
+  revokedTokens: {
+    token: string;
+    expiresAt: Date;
+  }[];
 }
 
 const dockerSessionSchema = new Schema<IDockerSessionDocument>({
@@ -25,6 +29,10 @@ const dockerSessionSchema = new Schema<IDockerSessionDocument>({
   ipAddress: { type: String, required: true },
   startTime: { type: Date, required: true },
   endTime: { type: Date },
+  revokedTokens: [{
+    token: { type: String, required: true },
+    expiresAt: { type: Date, required: true }
+  }]
 });
 
 export default mongoose.model<IDockerSessionDocument>('DockerSession', dockerSessionSchema);
