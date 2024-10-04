@@ -4,7 +4,6 @@ import fs from 'fs';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { FileFilterCallback } from 'multer';
 import { FileTypeNotAllowedError, FileSizeTooLargeError, BadRequestError } from '../utils/custom-errors.util';
-import environment from '../config/environment';
 
 type DestinationCallback = (error: Error | null, destination: string) => void;
 type FileNameCallback = (error: Error | null, filename: string) => void;
@@ -13,17 +12,9 @@ const storage = multer.diskStorage({
   destination: (req: AuthRequestWithFile, file: Express.Multer.File, cb: DestinationCallback) => {
     let uploadPath: string;
 
-    if (file.fieldname === 'profilePicture') {
-      uploadPath = 'uploads/profile_pictures/';
-    } else if (file.fieldname === 'productPictures') {
-      const productId = req.params.productId || 'temp'; // use temp if productID is not avaliable
-      uploadPath = `uploads/products/${productId}/`;
-    } else if (file.fieldname === 'disputeAttachments') {
-      const disputeId = req.params.disputeId || 'temp';
-      uploadPath = `uploads/disputes/${disputeId}/`;
-    } else if (file.fieldname === 'messagePhotos') {
-      const userId = req.user?.id || 'anonymous';
-      uploadPath = `uploads/messages/${userId}/`;
+    if (file.fieldname === 'blogPictures') {
+      const postId = req.params.postId || 'temp'; // use temp if productID is not avaliable
+      uploadPath = `uploads/blog/${postId}/`;
     } else {
       return cb(new Error('Invalid field name'), '');
     }
@@ -42,11 +33,11 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/quicktime'];
+  const allowedMimes = ['image/jpeg', 'image/png'];
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new FileTypeNotAllowedError(['jpeg', 'png', 'gif', 'mp4', 'mov']));
+    cb(new FileTypeNotAllowedError(['jpeg', 'png']));
   }
 };
 
@@ -55,7 +46,6 @@ export const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 50 * 1024 * 1024, // 50 MB
-    files: environment.product.maxPictures
   }
 });
 

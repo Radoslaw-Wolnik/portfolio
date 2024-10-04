@@ -12,8 +12,8 @@ export const uploadProfilePicture = (req: Request, res: Response, next: NextFunc
   });
 };
 
-export const uploadProductPhotos = (req: Request, res: Response, next: NextFunction) => {
-  upload.array('productPictures', environment.product.maxPictures)(req, res, (err) => {
+export const uploadBlogPhotos = (req: Request, res: Response, next: NextFunction) => {
+  upload.array('blogPictures', 10)(req, res, (err) => {
     if (err) {
       handleMulterError(err, req, res, next);
     } else {
@@ -23,7 +23,7 @@ export const uploadProductPhotos = (req: Request, res: Response, next: NextFunct
           url: file.path,
           filename: file.filename,
           // You might want to generate or receive altText from the client
-          altText: req.body.altText || 'Product image'
+          altText: req.body.altText || 'Blog image'
         }));
       }
       next();
@@ -31,40 +31,3 @@ export const uploadProductPhotos = (req: Request, res: Response, next: NextFunct
   });
 };
 
-
-
-export const uploadDisputeAttachments = (req: Request, res: Response, next: NextFunction) => {
-  upload.array('disputeAttachments', 5)(req, res, (err) => {
-    if (err) {
-      handleMulterError(err, req, res, next);
-    } else {
-      // Process uploaded files
-      if (req.files && Array.isArray(req.files)) {
-        req.body.attachments = req.files.map(file => ({
-          url: file.path,
-          filename: file.filename,
-          fileType: file.mimetype
-        }));
-      }
-      next();
-    }
-  });
-};
-
-export const uploadMessagePhotos = (req: Request, res: Response, next: NextFunction) => {
-  upload.array('messagePhotos', 5)(req, res, (err) => {
-    if (err) {
-      handleMulterError(err, req, res, next);
-    } else {
-      // Process uploaded files
-      if (req.files && Array.isArray(req.files)) {
-        req.body.attachments = req.files.map(file => ({
-          url: file.path,
-          filename: file.filename,
-          fileType: file.mimetype
-        }));
-      }
-      next();
-    }
-  });
-};
