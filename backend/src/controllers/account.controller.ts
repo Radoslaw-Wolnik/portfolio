@@ -1,9 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+// import { AuthRequest } from '../types/global';
 import { UnauthorizedError, NotFoundError, BadRequestError } from '../utils/custom-errors.util';
-import User, { IUserDocument } from '../models/user.model';
+import User from '../models/user.model';
 import bcrypt from 'bcrypt';
 import logger from '../utils/logger.util';
-// import { AuthRequest } from '../types/global';
+
 
 export const updateAccount = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -23,9 +24,9 @@ export const updateAccount = async (req: AuthRequest, res: Response, next: NextF
   } catch (error) {
     next(error);
   }
-};
+}
 
-export const changePassword = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const changePassword = async(req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user!._id;
@@ -48,7 +49,7 @@ export const changePassword = async (req: AuthRequest, res: Response, next: Next
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const deleteAccount = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -64,4 +65,4 @@ export const deleteAccount = async (req: AuthRequest, res: Response, next: NextF
   } catch (error) {
     next(error);
   }
-};
+}

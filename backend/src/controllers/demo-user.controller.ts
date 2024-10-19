@@ -6,6 +6,7 @@ import { NotFoundError, BadRequestError, InternalServerError } from '../utils/cu
 import logger from '../utils/logger.util';
 import bcrypt from 'bcrypt';
 
+
 export const createDemoUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { username, password, projectId, role } = req.body;
@@ -36,7 +37,7 @@ export const createDemoUser = async (req: AuthRequest, res: Response, next: Next
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const updateDemoUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -62,7 +63,7 @@ export const updateDemoUser = async (req: AuthRequest, res: Response, next: Next
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const deleteDemoUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -76,7 +77,7 @@ export const deleteDemoUser = async (req: AuthRequest, res: Response, next: Next
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const getDemoUsers = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -91,4 +92,4 @@ export const getDemoUsers = async (req: AuthRequest, res: Response, next: NextFu
   } catch (error) {
     next(error);
   }
-};
+}

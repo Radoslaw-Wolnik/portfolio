@@ -13,10 +13,10 @@ import {
 
 const router = express.Router();
 
-router.get('/', getSiteSettings);
-router.put('/', authenticateJWT, isAdmin, updateSiteSettings);
-router.put('/seo', authenticateJWT, isAdmin, updateSEOSettings);
-router.put('/social', authenticateJWT, isAdmin, updateSocialMediaLinks);
-router.put('/logo', authenticateJWT, isAdmin, updateLogo);
+router.get('/site-settings', getSiteSettings);
+router.put('/site-settings', authenticateJWT, isAdmin, updateSiteSettings);
+router.put('/site-settings/seo', authenticateJWT, isAdmin, updateSEOSettings);
+router.put('/site-settings/social-media', authenticateJWT, isAdmin, updateSocialMediaLinks);
+router.put('/site-settings/logo', authenticateJWT, isAdmin, updateLogo);
 
 export default router;

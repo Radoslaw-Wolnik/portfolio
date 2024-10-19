@@ -4,6 +4,7 @@ import { dockerSessionService } from '../services/docker-session.service';
 import { NotFoundError, BadRequestError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
 
+
 export const createSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { projectName, username } = req.body;
@@ -13,7 +14,7 @@ export const createSession = async (req: AuthRequest, res: Response, next: NextF
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const getSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -22,7 +23,7 @@ export const getSession = async (req: AuthRequest, res: Response, next: NextFunc
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const listUserSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -31,7 +32,7 @@ export const listUserSessions = async (req: AuthRequest, res: Response, next: Ne
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const terminateSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -41,7 +42,7 @@ export const terminateSession = async (req: AuthRequest, res: Response, next: Ne
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const getSessionStats = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -50,7 +51,7 @@ export const getSessionStats = async (req: AuthRequest, res: Response, next: Nex
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const swapUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -62,4 +63,4 @@ export const swapUser = async (req: AuthRequest, res: Response, next: NextFuncti
   } catch (error) {
     next(error);
   }
-};
+}

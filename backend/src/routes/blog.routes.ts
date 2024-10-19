@@ -12,13 +12,11 @@ import {
 
 const router = express.Router();
 
-router.get('/', getBlogPosts);
-router.get('/search', searchBlogPosts);
-router.get('/:id', getBlogPostById);
-
-router.use(authenticateJWT);
-router.post('/', createBlogPost);
-router.put('/:id', updateBlogPost);
-router.delete('/:id', deleteBlogPost);
+router.post('/blog-posts', authenticateJWT, createBlogPost);
+router.get('/blog-posts', getBlogPosts);
+router.get('/blog-posts/:id', getBlogPostById);
+router.put('/blog-posts/:id', authenticateJWT, updateBlogPost);
+router.delete('/blog-posts/:id', authenticateJWT, deleteBlogPost);
+router.get('/blog-posts/search', searchBlogPosts);
 
 export default router;

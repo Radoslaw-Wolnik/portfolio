@@ -1,43 +1,40 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UnauthorizedError } from '../utils/custom-errors.util';
-import User from '../models/user.model';
-import DemoUser from '../models/demo-user.model';
+import User, { IUserDocument } from '../models/user.model';
+import DemoUser, { IDemoUser } from '../models/demo-user.model';
 import environment from '../config/environment';
 
-export interface AuthRequest extends Request {
-  user?: any;
-  isDemo?: boolean;
-}
-
-export const authenticateJWT = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const token = req.cookies.auth_token || req.cookies.demo_auth_token;
-
-    if (!token) {
-      throw new UnauthorizedError('No token provided');
-    }
-
-    const decoded = jwt.verify(token, environment.auth.jwtSecret) as any;
-    
-    if (decoded.type === 'demo') {
-      const demoUser = await DemoUser.findOne({ _id: decoded.id, project: decoded.projectId });
-      if (!demoUser) {
-        throw new UnauthorizedError('Demo user not found');
-      }
-      req.user = demoUser;
-      req.isDemo = true;
-    } else {
-      const user = await User.findOne({ _id: decoded.id });
-      if (!user) {
-        throw new UnauthorizedError('User not found');
-      }
-      req.user = user;
-      req.isDemo = false;
-    }
-
-    next();
-  } catch (error) {
-    next(new UnauthorizedError('Invalid token'));
+export const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
+  const token = req.cookies.auth_token || req.cookies.demo_auth_token;
+  if (!token) {
+    return next(new UnauthorizedError('No token provided'));
   }
+
+  jwt.verify(token, environment.auth.jwtSecret, async (err: any, decoded: any) => {
+    if (err) {
+      return next(new UnauthorizedError('Invalid token'));
+    }
+
+    try {
+      if (decoded.type === 'demo') {
+        const demoUser = await DemoUser.findOne({ _id: decoded.id, project: decoded.projectId });
+        if (!demoUser) {
+          return next(new UnauthorizedError('Demo user not found'));
+        }
+        (req as AuthRequest).user = demoUser as IDemoUser;
+        (req as AuthRequest).isDemo = true;
+      } else {
+        const user = await User.findOne({ _id: decoded.id });
+        if (!user) {
+          return next(new UnauthorizedError('User not found'));
+        }
+        (req as AuthRequest).user = user as IUserDocument;
+        (req as AuthRequest).isDemo = false;
+      }
+      next();
+    } catch (error) {
+      next(new UnauthorizedError('Authentication failed'));
+    }
+  });
 };

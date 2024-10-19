@@ -103,3 +103,48 @@ export const getProjectStats = async (req: AuthRequest, res: Response, next: Nex
     next(error);
   }
 };
+
+/*
+
+export const getProjectHealth = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { projectId } = req.params;
+    const health = await monitoringService.getProjectHealth(projectId);
+    res.json(health);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const getProjectResources = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { projectId } = req.params;
+    const resources = await monitoringService.getProjectResources(projectId);
+    res.json(resources);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const backupProject = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { projectId } = req.params;
+    const backupResult = await backupService.backupProject(projectId);
+    res.json(backupResult);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const restoreProject = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { projectId } = req.params;
+    const { backupPath } = req.body;
+    const restoreResult = await backupService.restoreProject(projectId, backupPath);
+    res.json(restoreResult);
+  } catch (error) {
+    next(error);
+  }
+}
+
+*/

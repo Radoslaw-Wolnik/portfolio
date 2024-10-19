@@ -1,8 +1,9 @@
 import { Response, NextFunction } from 'express';
-//import { AuthRequest } from '../types/global';
+// import { AuthRequest } from '../types/global';
 import BlogPost, { IBlogPostDocument } from '../models/blog-post.model';
 import { NotFoundError, BadRequestError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
+
 
 export const createBlogPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -16,7 +17,7 @@ export const createBlogPost = async (req: AuthRequest, res: Response, next: Next
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const getBlogPosts = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -42,7 +43,7 @@ export const getBlogPosts = async (req: AuthRequest, res: Response, next: NextFu
   } catch (error) {
     next(new InternalServerError('Error fetching blog posts'));
   }
-};
+}
 
 export const getBlogPostById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -54,7 +55,7 @@ export const getBlogPostById = async (req: AuthRequest, res: Response, next: Nex
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const updateBlogPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -63,8 +64,7 @@ export const updateBlogPost = async (req: AuthRequest, res: Response, next: Next
       throw new NotFoundError('Blog post not found');
     }
 
-    // Check if the user is the author of the post or an admin
-    if (blogPost.author.toString() !== req.user!._id && req.user!.role !== 'admin') {
+    if (blogPost.author.toString() !== req.user!.id.toString() && req.user!.role !== 'admin') {
       throw new BadRequestError('You do not have permission to update this post');
     }
 
@@ -76,7 +76,7 @@ export const updateBlogPost = async (req: AuthRequest, res: Response, next: Next
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const deleteBlogPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -85,18 +85,17 @@ export const deleteBlogPost = async (req: AuthRequest, res: Response, next: Next
       throw new NotFoundError('Blog post not found');
     }
 
-    // Check if the user is the author of the post or an admin
-    if (blogPost.author.toString() !== req.user!._id && req.user!.role !== 'admin') {
+    if (blogPost.author.toString() !== req.user!.id.toString() && req.user!.role !== 'admin') {
       throw new BadRequestError('You do not have permission to delete this post');
     }
 
-    await blogPost.deleteOne(); // this one?
+    await blogPost.deleteOne();
     logger.info(`Blog post deleted: ${req.params.id}`, { userId: req.user!._id });
     res.status(204).send();
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const searchBlogPosts = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -114,4 +113,4 @@ export const searchBlogPosts = async (req: AuthRequest, res: Response, next: Nex
   } catch (error) {
     next(error);
   }
-};
+}

@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
+// import { AuthRequest } from '../types/global';
 import SiteSettings from '../models/site-settings.model';
 import { NotFoundError, UnauthorizedError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
+
 
 export const getSiteSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -13,7 +15,7 @@ export const getSiteSettings = async (req: Request, res: Response, next: NextFun
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const updateSiteSettings = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -47,7 +49,7 @@ export const updateSiteSettings = async (req: AuthRequest, res: Response, next: 
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const updateSEOSettings = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -68,7 +70,7 @@ export const updateSEOSettings = async (req: AuthRequest, res: Response, next: N
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const updateSocialMediaLinks = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -89,7 +91,7 @@ export const updateSocialMediaLinks = async (req: AuthRequest, res: Response, ne
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const updateLogo = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -110,4 +112,4 @@ export const updateLogo = async (req: AuthRequest, res: Response, next: NextFunc
   } catch (error) {
     next(error);
   }
-};
+}

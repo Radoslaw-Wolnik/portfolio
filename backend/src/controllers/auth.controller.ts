@@ -1,18 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
+// import { AuthRequest } from '../types/global';
 import { UnauthorizedError, BadRequestError } from '../utils/custom-errors.util';
-import User from '../models/user.model';
+import User, { IUserDocument } from '../models/user.model';
 import DemoUser from '../models/demo-user.model';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-//import { AuthRequest } from '../types/global';
 import environment from '../config/environment';
 import logger from '../utils/logger.util';
+
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user) {
+      throw new UnauthorizedError('Invalid credentials');
+    }
+    
+    const isPasswordValid = await (user as IUserDocument).comparePassword(password);
+    if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid credentials');
     }
 
@@ -23,6 +29,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     next(error);
   }
 };
+
 
 export const loginDemo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -38,7 +45,7 @@ export const loginDemo = async (req: Request, res: Response, next: NextFunction)
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const refreshToken = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -71,7 +78,7 @@ export const refreshToken = async (req: AuthRequest, res: Response, next: NextFu
   } catch (error) {
     next(error);
   }
-};
+}
 
 export const logout = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -87,4 +94,5 @@ export const logout = async (req: AuthRequest, res: Response, next: NextFunction
   } catch (error) {
     next(error);
   }
-};
+}
+

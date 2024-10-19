@@ -1,13 +1,12 @@
 import express from 'express';
 import { getBasicHealth, getDetailedHealth } from '../controllers/health.controller';
+import { authenticateJWT } from '../middleware/auth.middleware';
+import { isAdmin } from '../middleware/role.middleware';
 
 const router = express.Router();
 
-// Basic health check route
-router.get('/basic', getBasicHealth);
-
-// Detailed health check route
-router.get('/details', getDetailedHealth);
+router.get('/health', getBasicHealth);
+router.get('/health/detailed', authenticateJWT, isAdmin, getDetailedHealth);
 
 export default router;
 

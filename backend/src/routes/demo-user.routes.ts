@@ -5,12 +5,11 @@ import { createDemoUser, updateDemoUser, deleteDemoUser, getDemoUsers } from '..
 
 const router = express.Router();
 
-router.use(authenticateJWT);
-router.use(isAdmin);
+router.use(authenticateJWT, isAdmin);
 
-router.post('/', createDemoUser);
-router.get('/:projectId', getDemoUsers);
-router.put('/:id', updateDemoUser);
-router.delete('/:id', deleteDemoUser);
+router.post('/demo-users', createDemoUser);
+router.put('/demo-users/:id', updateDemoUser);
+router.delete('/demo-users/:id', deleteDemoUser);
+router.get('/demo-users/:projectId', getDemoUsers);
 
 export default router;
