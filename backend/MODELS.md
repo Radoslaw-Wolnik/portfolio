@@ -1,14 +1,6 @@
 # Data Models
 
-This document outlines the data models used in the Small Shop application.
-
-## Table of Contents
-1. [User](#user)
-2. [BlogPost](#blogpost)
-3. [DockerSession](#dockersession)
-4. [SiteSettings](#sitesettings)
-
----
+This document outlines the data models used in the Project Management Backend application.
 
 ## User
 
@@ -30,24 +22,10 @@ Represents a user in the system.
 - `comparePassword(candidatePassword: string): Promise<boolean>`
   - Compares a candidate password with the stored hashed password.
 
-### Indexes
+### Static Methods
 
-- `username`: Unique index
-
-### Example
-
-```javascript
-{
-  _id: ObjectId("5f8d0f3c1234567890abcdef"),
-  username: "johndoe",
-  password: "$2b$10$X9rLu1Uf2/bhVvNp7u.cTu5CL9t3CK6jEqHvFZL2RAzO2zFSxEF9e",
-  role: "admin",
-  createdAt: ISODate("2023-05-20T10:30:00Z"),
-  updatedAt: ISODate("2023-05-20T10:30:00Z")
-}
-```
-
----
+- `createDefaultAdmin(): Promise<IUserDocument>`
+  - Creates or updates the default admin user.
 
 ## BlogPost
 
@@ -62,6 +40,7 @@ Represents a blog post in the system.
 | shortDescription | String   | Brief description of the post  | Required     |
 | content          | Array    | Content blocks of the post     | Required     |
 | tags             | [String] | Tags associated with the post  |              |
+| author           | ObjectId | Reference to the User model    | Required     |
 | createdAt        | Date     | Timestamp of post creation     | Auto-generated |
 | updatedAt        | Date     | Timestamp of last update       | Auto-updated |
 
@@ -74,30 +53,6 @@ Represents a blog post in the system.
 | language | String | Programming language (for code)   | Optional              |
 | alt      | String | Alt text (for images)             | Optional              |
 
-### Indexes
-
-- `tags`: Index for faster querying by tags
-
-### Example
-
-```javascript
-{
-  _id: ObjectId("5f8d0f3c1234567890abcdef"),
-  title: "Introduction to Node.js",
-  shortDescription: "A beginner's guide to Node.js",
-  content: [
-    { type: "text", content: "Node.js is a JavaScript runtime..." },
-    { type: "code", content: "console.log('Hello, World!');", language: "javascript" },
-    { type: "image", content: "/uploads/nodejs-logo.png", alt: "Node.js Logo" }
-  ],
-  tags: ["nodejs", "javascript", "backend"],
-  createdAt: ISODate("2023-05-20T14:30:00Z"),
-  updatedAt: ISODate("2023-05-20T14:30:00Z")
-}
-```
-
----
-
 ## DockerSession
 
 Represents a Docker session for project demonstrations.
@@ -107,55 +62,41 @@ Represents a Docker session for project demonstrations.
 | Field        | Type     | Description                         | Constraints    |
 |--------------|----------|-------------------------------------|----------------|
 | _id          | ObjectId | Unique identifier                   | Auto-generated |
+| sessionId    | String   | Unique session identifier           | Required, Unique |
+| userId       | ObjectId | Reference to the User model         | Required       |
 | projectName  | String   | Name of the project                 | Required       |
-| containerId  | String   | ID of the Docker container          | Required       |
-| activeUsers  | Array    | List of active users in the session | Required       |
-| ipAddress    | String   | IP address of the container         | Required       |
+| username     | String   | Username for the session            | Required       |
+| containerSessionId | String | ID of the Docker container session | Required       |
 | startTime    | Date     | Start time of the session           | Required       |
 | endTime      | Date     | End time of the session             | Optional       |
-| revokedTokens| Array    | List of revoked tokens              | Optional       |
+| lastActivityTime | Date | Time of last activity in the session | Auto-updated   |
+| lastSwitchTime | Date   | Time of last user switch            | Optional       |
+| status       | String   | Status of the session               | Enum: ['active', 'terminated'], Default: 'active' |
 
-#### ActiveUser Schema
+## Project
 
-| Field    | Type     | Description                  | Constraints    |
-|----------|----------|------------------------------|----------------|
-| userId   | ObjectId | ID of the user               | Required       |
-| username | String   | Username of the user         | Required       |
-| role     | String   | Role of the user in the demo | Required       |
+Represents a project in the system.
 
-#### RevokedToken Schema
+### Schema
 
-| Field     | Type   | Description                   | Constraints    |
-|-----------|--------|-------------------------------|----------------|
-| token     | String | The revoked token             | Required       |
-| expiresAt | Date   | Expiration time of the token  | Required       |
+| Field            | Type     | Description                         | Constraints    |
+|------------------|----------|-------------------------------------|----------------|
+| _id              | ObjectId | Unique identifier                   | Auto-generated |
+| name             | String   | Name of the project                 | Required, Unique |
+| gitUrl           | String   | Git repository URL                  | Required       |
+| branch           | String   | Git branch to use                   | Required, Default: 'main' |
+| dockerComposeFile| String   | Path to Docker Compose file         | Required, Default: 'docker-compose.yml' |
+| subdomain        | String   | Subdomain for the project           | Required, Unique |
+| status           | String   | Current status of the project       | Enum: ['running', 'stopped', 'error', 'frozen'], Default: 'stopped' |
+| containers       | [Container] | List of containers in the project | Required       |
 
-### Indexes
+### Container Schema
 
-- `projectName`: Index for faster querying by project name
-- `containerId`: Index for faster querying by container ID
-
-### Example
-
-```javascript
-{
-  _id: ObjectId("5f8d0f3c1234567890abcdef"),
-  projectName: "awesome-project",
-  containerId: "abc123def456",
-  activeUsers: [
-    { userId: ObjectId("5f8d0f3c1234567890abcde1"), username: "alice", role: "admin" },
-    { userId: ObjectId("5f8d0f3c1234567890abcde2"), username: "bob", role: "user" }
-  ],
-  ipAddress: "172.17.0.2",
-  startTime: ISODate("2023-05-20T09:00:00Z"),
-  endTime: null,
-  revokedTokens: [
-    { token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", expiresAt: ISODate("2023-05-20T10:00:00Z") }
-  ]
-}
-```
-
----
+| Field | Type   | Description                   | Constraints    |
+|-------|--------|-------------------------------|----------------|
+| name  | String | Name of the container         | Required       |
+| port  | Number | Port number for the container | Required       |
+| type  | String | Type of the container         | Enum: ['frontend', 'backend', 'database', 'other'], Required |
 
 ## SiteSettings
 
@@ -166,25 +107,28 @@ Represents the global settings for the site.
 | Field            | Type   | Description                     | Constraints    |
 |------------------|--------|---------------------------------|----------------|
 | _id              | ObjectId | Unique identifier             | Auto-generated |
-| siteName         | String | Name of the site                | Required       |
-| siteDescription  | String | Description of the site         | Required       |
+| siteName         | String | Name of the site                | Required, Default: "My Site" |
+| siteDescription  | String | Description of the site         | Required, Default: "Welcome to my site" |
 | siteKeywords     | [String] | Keywords for SEO              | Optional       |
 | socialMediaLinks | Object | Social media profile links      | Optional       |
-| logoUrl          | String | URL of the site logo            | Optional       |
+| logoUrl          | String | URL of the site logo            | Optional, Default: "/default-logo.png" |
 
-### Example
+### Static Methods
 
-```javascript
-{
-  _id: ObjectId("5f8d0f3c1234567890abcdef"),
-  siteName: "Small Shop",
-  siteDescription: "Your one-stop shop for all things small",
-  siteKeywords: ["shop", "small business", "e-commerce"],
-  socialMediaLinks: {
-    facebook: "https://facebook.com/smallshop",
-    twitter: "https://twitter.com/smallshop",
-    instagram: "https://instagram.com/smallshop"
-  },
-  logoUrl: "/uploads/logo.png"
-}
-```
+- `findOneOrCreate(condition: any, doc: any): Promise<ISiteSettingsDocument>`
+  - Finds an existing document or creates a new one if it doesn't exist.
+
+## DemoUser
+
+Represents a demo user for project demonstrations.
+
+### Schema
+
+| Field    | Type     | Description                   | Constraints    |
+|----------|----------|-------------------------------|----------------|
+| _id      | ObjectId | Unique identifier             | Auto-generated |
+| username | String   | Username for the demo user    | Required       |
+| password | String   | Hashed password               | Required       |
+| project  | ObjectId | Reference to the Project model| Required       |
+| role     | String   | Role of the demo user         | Required       |
+| createdAt| Date     | Creation timestamp            | Auto-generated, Expires after 24 hours |
