@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import User from '../models/user.model';
 import { UnauthorizedError, NotFoundError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
 
 export const getUserProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (!req.user) {
+    if (!req.user || !req.user._id) {
       throw new UnauthorizedError('User not authenticated');
     }
 
@@ -19,15 +19,15 @@ export const getUserProfile = async (req: AuthRequest, res: Response, next: Next
   }
 };
 
-export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (!req.user) {
+    if (!req.user || !req.user._id) {
       throw new UnauthorizedError('User not authenticated');
     }
 
     const updatedUser = await User.findByIdAndUpdate(req.user._id, { username: req.body.username }, { new: true, runValidators: true }).select('-password');
     if (!updatedUser) {
-      throw new NotFoundError('User');
+      throw new NotFoundError('User not found');
     }
 
     logger.info('User profile updated', { userId: req.user._id });

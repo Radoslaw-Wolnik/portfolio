@@ -1,20 +1,32 @@
-// src/models/session.model.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IDockerSession extends Document {
+  sessionId: string;
   userId: Schema.Types.ObjectId;
-  token: string;
-  expiresAt: Date;
-  ipAddress: string;
-  userAgent: string;
+  projectName: string;
+  username: string;
+  containerSessionId: string;
+  startTime: Date;
+  endTime?: Date;
+  lastActivityTime: Date;
+  lastSwitchTime?: Date;
+  status: 'active' | 'terminated';
 }
 
 const dockerSessionSchema = new Schema<IDockerSession>({
+  sessionId: { type: String, required: true, unique: true },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  token: { type: String, required: true, unique: true },
-  expiresAt: { type: Date, required: true },
-  ipAddress: { type: String, required: true },
-  userAgent: { type: String, required: true },
+  projectName: { type: String, required: true },
+  username: { type: String, required: true },
+  containerSessionId: { type: String, required: true },
+  startTime: { type: Date, required: true },
+  endTime: { type: Date },
+  lastActivityTime: { type: Date, default: Date.now },
+  lastSwitchTime: { type: Date },
+  status: { type: String, enum: ['active', 'terminated'], default: 'active' },
 });
+
+dockerSessionSchema.index({ userId: 1, status: 1 });
+dockerSessionSchema.index({ lastActivityTime: 1 }, { expireAfterSeconds: 86400 }); // Auto-delete after 24 hours of inactivity
 
 export default mongoose.model<IDockerSession>('DockerSession', dockerSessionSchema);

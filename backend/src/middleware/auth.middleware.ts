@@ -1,26 +1,24 @@
-// src/middleware/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UnauthorizedError } from '../utils/custom-errors.util';
 import User from '../models/user.model';
 import DemoUser from '../models/demo-user.model';
+import environment from '../config/environment';
 
 export interface AuthRequest extends Request {
   user?: any;
   isDemo?: boolean;
 }
 
-// change to https cookies
-
 export const authenticateJWT = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.cookies.auth_token || req.cookies.demo_auth_token;
 
     if (!token) {
       throw new UnauthorizedError('No token provided');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, environment.auth.jwtSecret) as any;
     
     if (decoded.type === 'demo') {
       const demoUser = await DemoUser.findOne({ _id: decoded.id, project: decoded.projectId });
@@ -43,4 +41,3 @@ export const authenticateJWT = async (req: AuthRequest, res: Response, next: Nex
     next(new UnauthorizedError('Invalid token'));
   }
 };
-

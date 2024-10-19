@@ -1,11 +1,16 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
+import environment from '../config/environment';
 
 export interface IUserDocument extends Document {
   username: string;
   password: string;
   role: 'admin';
   comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+interface IUserModel extends mongoose.Model<IUserDocument> {
+  createDefaultAdmin(): Promise<IUserDocument>;
 }
 
 const userSchema = new Schema<IUserDocument>({
@@ -41,4 +46,30 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model<IUserDocument>('User', userSchema);
+userSchema.statics.createDefaultAdmin = async function(): Promise<IUserDocument> {
+  const defaultAdminUsername = environment.auth.defaultAdminUsername;
+  const defaultAdminPassword = environment.auth.defaultAdminPassword;
+
+  if (!defaultAdminUsername || !defaultAdminPassword) {
+    throw new Error('Default admin credentials are not set in environment variables');
+  }
+
+  const existingAdmin = await this.findOne({ username: defaultAdminUsername });
+
+  if (existingAdmin) {
+    existingAdmin.password = defaultAdminPassword;
+    await existingAdmin.save();
+    return existingAdmin;
+  }
+
+  const newAdmin = new this({
+    username: defaultAdminUsername,
+    password: defaultAdminPassword,
+    role: 'admin'
+  });
+
+  await newAdmin.save();
+  return newAdmin;
+};
+
+export default mongoose.model<IUserDocument, IUserModel>('User', userSchema);

@@ -1,6 +1,10 @@
-import { Server, Socket } from 'socket.io';
-import { Server as HttpServer } from 'http';
+import fs from 'fs/promises';
+import path from 'path';
+import yaml from 'js-yaml';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import logger from '../utils/logger.util';
+import { BadRequestError, InternalServerError } from '../utils/custom-errors.util';
 import environment from '../config/environment';
 
 export enum ContainerStatus {
@@ -19,64 +23,84 @@ interface StatusUpdate {
   error?: string;
 }
 
-class WebSocketService {
-  private io: Server;
+const execAsync = promisify(exec);
 
-  constructor(httpServer: HttpServer) {
-    this.io = new Server(httpServer, {
-      cors: {
-        origin: environment.app.frontendUrl,
-        methods: ['GET', 'POST'],
-      },
-    });
+interface TraefikRule {
+  [key: string]: {
+    rule: string;
+    service: string;
+  };
+}
 
-    this.io.on('connection', (socket: Socket) => {
-      logger.info('New WebSocket connection established', { socketId: socket.id });
+class RoutingService {
+  private traefikConfigPath: string;
 
-      socket.on('joinSession', (sessionId: string) => {
-        socket.join(sessionId);
-        logger.info(`Socket joined session: ${sessionId}`, { socketId: socket.id });
-      });
-
-      socket.on('leaveSession', (sessionId: string) => {
-        socket.leave(sessionId);
-        logger.info(`Socket left session: ${sessionId}`, { socketId: socket.id });
-      });
-
-      socket.on('disconnect', () => {
-        logger.info('WebSocket connection closed', { socketId: socket.id });
-      });
-    });
+  constructor() {
+    this.traefikConfigPath = environment.traefik.configPath;
   }
 
-  emitContainerStatus(sessionId: string, update: StatusUpdate): void {
+  async addProjectRoute(projectName: string, subdomain: string): Promise<void> {
     try {
-      this.io.to(sessionId).emit('containerStatus', update);
-      logger.info(`Emitted container status update for ${sessionId}`, { update });
+      const config = await this.getTraefikConfig();
+      
+      config.http.routers[projectName] = {
+        rule: `Host(\`${subdomain}.${environment.app.domain}\`)`,
+        service: projectName,
+      };
+
+      await this.saveTraefikConfig(config);
+      await this.reloadTraefik();
+      logger.info(`Added route for project: ${projectName}`);
     } catch (error) {
-      logger.error(`Error emitting container status for ${sessionId}`, { error });
+      logger.error(`Failed to add route for project: ${projectName}`, error);
+      throw new InternalServerError('Failed to add project route');
     }
   }
 
-  emitSessionUpdate(sessionId: string, data: any): void {
+  async removeProjectRoute(projectName: string): Promise<void> {
     try {
-      this.io.to(sessionId).emit('sessionUpdate', data);
-      logger.info(`Emitted session update for ${sessionId}`, { data });
+      const config = await this.getTraefikConfig();
+      
+      delete config.http.routers[projectName];
+
+      await this.saveTraefikConfig(config);
+      await this.reloadTraefik();
+      logger.info(`Removed route for project: ${projectName}`);
     } catch (error) {
-      logger.error(`Error emitting session update for ${sessionId}`, { error });
+      logger.error(`Failed to remove route for project: ${projectName}`, error);
+      throw new InternalServerError('Failed to remove project route');
+    }
+  }
+
+  private async getTraefikConfig(): Promise<any> {
+    try {
+      const fileContents = await fs.readFile(this.traefikConfigPath, 'utf8');
+      return yaml.load(fileContents);
+    } catch (error) {
+      logger.error('Failed to read Traefik config', error);
+      throw new BadRequestError('Failed to read Traefik configuration');
+    }
+  }
+
+  private async saveTraefikConfig(config: any): Promise<void> {
+    try {
+      const yamlStr = yaml.dump(config);
+      await fs.writeFile(this.traefikConfigPath, yamlStr, 'utf8');
+    } catch (error) {
+      logger.error('Failed to save Traefik config', error);
+      throw new BadRequestError('Failed to save Traefik configuration');
+    }
+  }
+
+  private async reloadTraefik(): Promise<void> {
+    try {
+      await execAsync('docker kill -s HUP traefik');
+      logger.info('Traefik configuration reloaded');
+    } catch (error) {
+      logger.error('Failed to reload Traefik', error);
+      throw new BadRequestError('Failed to reload Traefik');
     }
   }
 }
 
-let webSocketService: WebSocketService;
-
-export const initializeWebSocketService = (httpServer: HttpServer): void => {
-  webSocketService = new WebSocketService(httpServer);
-};
-
-export const getWebSocketService = (): WebSocketService => {
-  if (!webSocketService) {
-    throw new Error('WebSocket service not initialized');
-  }
-  return webSocketService;
-};
+export const routingService = new RoutingService();

@@ -8,6 +8,7 @@ import logger from './utils/logger.util';
 import { gracefulShutdown } from './utils/server.util';
 import { initializeSchedules } from './schedules/init-schedules';
 import { initializeAppData } from './utils/init-app-data';
+import User from './models/user.model.js';
 
 // Set port from environment or fallback to 5000
 const PORT: number = environment.app.port || 5000;
@@ -19,6 +20,10 @@ const startServer = async () => {
     await connectDB();
     const connectionTime = Date.now() - startTime;
     logger.info('Connected to database', { connectionTimeMs: connectionTime });
+
+    // Create or update default admin account
+    await User.createDefaultAdmin();
+    logger.info('Default admin account created or updated');
 
     // Initialize app data (site settings, email templates, and verify email service)
     await initializeAppData();

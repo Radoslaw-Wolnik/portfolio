@@ -24,8 +24,9 @@ const environment = {
     uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/myapp',
   },
   auth: {
-    jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
-    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
+    jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret',
+    defaultAdminUsername: process.env.DEFAULT_ADMIN_USERNAME || 'admin',
+    defaultAdminPassword: process.env.DEFAULT_ADMIN_PASSWORD,
     encryptionKey: process.env.ENCRYPTION_KEY || 'your-encryption-key',
     demoProjectSecret: process.env.DEMO_SECRET || 'your-projects-secret',
   },

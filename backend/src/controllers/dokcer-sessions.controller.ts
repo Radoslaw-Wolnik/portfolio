@@ -1,36 +1,59 @@
-// src/controllers/session.controller.ts
-import { Request, Response } from 'express';
-import DockerSession, { IDockerSession } from '../models/docker-session.model';
-import { NotFoundError } from '../utils/custom-errors.util';
+import { Response, NextFunction } from 'express';
+import { dockerSessionService } from '../services/docker-session.service';
+import { NotFoundError, BadRequestError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
 
-export const createSession = async (req: Request, res: Response) => {
-  const sessionData = req.body;
-  const session = new DockerSession(sessionData);
-  await session.save();
-  logger.info(`Session created for user: ${session.userId}`);
-}
-
-export const getUserSessions = async (req: Request, res: Response) => {
-  const userId = req.user!.id
-  const sessions =  DockerSession.find({ userId });
-  res.json(sessions);
-};
-
-export const deleteSession = async (req: Request, res: Response) => {
-  const sessionId = req.params.id;
-  const session = await DockerSession.findByIdAndDelete(sessionId);
-  if (!session) {
-    throw new NotFoundError('Session not found');
+export const createSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { projectName, username } = req.body;
+    const session = await dockerSessionService.createSession(req.user._id, projectName, username);
+    logger.info(`Docker session created`, { userId: req.user._id, projectName, username });
+    res.status(201).json(session);
+  } catch (error) {
+    next(error);
   }
-  logger.info(`Session deleted: ${sessionId}`);
-
-  res.status(204).send();
 };
 
-export const deleteAllSessions = async (req: Request, res: Response) => {
-  const userId = req.user!.id
-  await DockerSession.deleteMany({ userId });
-  logger.info(`All sessions deleted for user: ${userId}`);
-  res.status(204).send();
+export const getUserSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const sessions = await dockerSessionService.listUserSessions(req.user._id);
+    res.json(sessions);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const switchUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { sessionId, newUsername } = req.body;
+    const updatedSession = await dockerSessionService.switchUser(sessionId, newUsername);
+    logger.info(`User switched in Docker session`, { sessionId, newUsername, userId: req.user._id });
+    res.json(updatedSession);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const terminateSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { sessionId } = req.params;
+    await dockerSessionService.terminateSession(sessionId);
+    logger.info(`Docker session terminated`, { sessionId, userId: req.user._id });
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const terminateAllSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const sessions = await dockerSessionService.listUserSessions(req.user._id);
+    for (const session of sessions) {
+      await dockerSessionService.terminateSession(session.sessionId);
+    }
+    logger.info(`All Docker sessions terminated for user`, { userId: req.user._id });
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
 };
