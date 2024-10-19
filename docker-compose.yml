@@ -2,193 +2,97 @@ version: '3.8'
 
 services:
   reverse-proxy:
-    image: traefik:v2.5
+    image: traefik:v3.0
     command:
       - "--api.insecure=true"
-      - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.swarmMode=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--providers.file.directory=/etc/traefik/dynamic_conf" # the traefic dynamic conf file
+      - "--providers.file.directory=/etc/traefik/dynamic_conf"
       - "--providers.file.watch=true"
-      - "--log.level=DEBUG"
+      - "--log.level=INFO"
+      - "--accesslog=true"
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080" # Traefik dashboard
+      - "8080:8080"  # Traefik dashboard
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./certs:/certs:ro"
-      - "./letsencrypt:/letsencrypt"
       - "./traefik_dynamic_conf:/etc/traefik/dynamic_conf:ro"
     networks:
       - frontend-network
       - backend-network
-    secrets:
-      - domain_name
-      - letsencrypt_email
-      - traefik_auth
-      - rate_limit_average
-      - rate_limit_burst
-    environment:
-      - DOMAIN_NAME=/run/secrets/domain_name
-      - LETSENCRYPT_EMAIL_FILE=/run/secrets/letsencrypt_email
-      - RATE_LIMIT_AVERAGE=${rate_limit_average}
-      - RATE_LIMIT_BURST=${rate_limit_burst}
-      - NODE_ENV=${NODE_ENV:-development}
-      # Comment out or remove the next line if not using Let's Encrypt in development
-      - CERT_RESOLVER=${CERT_RESOLVER:-}
-    deploy:
-      mode: global
-      placement:
-        constraints:
-          - node.role == manager
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.traefik.rule=Host(`${DOMAIN_NAME}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
-        - "traefik.http.routers.traefik.entrypoints=websecure"
-        - "traefik.http.routers.traefik.tls=true"
-        - "traefik.http.routers.traefik.service=api@internal"
-        - "traefik.http.middlewares.auth.basicauth.usersfile=/run/secrets/traefik_auth"
-        - "traefik.http.routers.traefik.tls.certresolver=${CERT_RESOLVER:-}" # cert resolver
-      # - "traefik.http.routers.traefik.middlewares=auth,rate-limit"
-      # - "traefik.http.middlewares.rate-limit.ratelimit.average=${RATE_LIMIT_AVERAGE}"
-      # - "traefik.http.middlewares.rate-limit.ratelimit.burst=${RATE_LIMIT_BURST}"
-
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN_NAME}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
 
   frontend:
     image: frontend-image:latest
-    secrets:
-      - domain_name
     environment:
-      - NODE_ENV=${NODE_ENV:-development} 
-      - VITE_API_URL=https://${domain_name}/api
-      - DOMAIN_NAME=/run/secrets/domain_name
+      - NODE_ENV=${NODE_ENV}
+      - VITE_API_URL=https://${DOMAIN_NAME}/api
+      - VITE_USE_HTTPS=true
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run dev
     networks:
       - frontend-network
-    ports:
-      - "3000:5173"  # Map container port 5173 to host port 3000 for dev
-    depends_on:
-      - reverse-proxy
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-      labels:
-        - "traefik.enable=true"
-      # - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`)"
-        - "traefik.http.routers.frontend.rule=Host(`popsbops.localhost`)"
-        - "traefik.http.services.frontend.loadbalancer.server.port=5173"
-        - "traefik.http.routers.frontend.entrypoints=websecure"
-        - "traefik.http.routers.frontend.tls=true"
-        - "traefik.docker.network=frontend-network"
-        #- "traefik.http.routers.frontend.tls.certresolver=${CERT_RESOLVER:-}"
-        #- "traefik.http.middlewares.frontend-security-headers.headers.customresponseheaders.X-Frame-Options=SAMEORIGIN"
-        #- "traefik.http.middlewares.frontend-security-headers.headers.customresponseheaders.X-Content-Type-Options=nosniff"
-        #- "traefik.http.routers.frontend.middlewares=frontend-security-headers"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
 
   backend:
     image: backend-image:latest
-    secrets:
-      - domain_name
-      - db_name
-      - db_user
-      - db_password
-      - jwt_secret
-      - encryption_key
-      - email_host
-      - email_port
-      - email_user
-      - email_password
-      - email_from
     environment:
-      - NODE_ENV=${NODE_ENV:-development} 
+      - NODE_ENV=${NODE_ENV}
       - PORT=5000
-      - FRONTEND=https://${domain_name}
-      - DB_NAME_FILE=/run/secrets/db_name
-      - DB_USER_FILE=/run/secrets/db_user
-      - DB_PASS_FILE=/run/secrets/db_password
-      - JWT_SECRET_FILE=/run/secrets/jwt_secret
-      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key
-      - EMAIL_HOST_FILE=/run/secrets/email_host
-      - EMAIL_PORT_FILE=/run/secrets/email_port
-      - EMAIL_USER_FILE=/run/secrets/email_user
-      - EMAIL_PASS_FILE=/run/secrets/email_password
-      - EMAIL_FROM_FILE=/run/secrets/email_from
-      - OLD_ENCRYPTION_KEY=""
-      - ROTATION_IN_PROGRESS=false
-      - DB_URI=""
-      - DOMAIN_NAME=/run/secrets/domain_name
+      - DOMAIN_NAME=${DOMAIN_NAME}
+      - FRONTEND=https://${DOMAIN_NAME}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
     volumes:
-      - ./backend/src:/app/src:delegated
-      - ./backend/nodemon.json:/app/nodemon.json
+      - ./backend:/app
       - /app/node_modules
       - ./backend/uploads:/app/uploads
     networks:
       - backend-network
     depends_on:
-      - reverse-proxy
       - mongo
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-      labels:
-        - "traefik.enable=true"
-      #  - "com.docker.stack.namespace=${STACK_NAME}"
-        - "traefik.http.routers.backend.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/api`)"
-        - "traefik.http.routers.backend.entrypoints=websecure"
-        - "traefik.http.routers.backend.tls=true"
-        - "traefik.http.services.backend.loadbalancer.server.port=5000"
-      # - "traefik.http.routers.frontend.tls.certresolver=${CERT_RESOLVER:-}"
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.services.backend.loadbalancer.server.port=5000"
 
   mongo:
-    image: mongo-image:6.0
+    image: mongo:6.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${DB_NAME}
     volumes:
       - mongo-data:/data/db
-      - ./backend/mongo/init-mongo-swarm.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
-      # - ./backend/mongo/mongod.conf:/etc/mongod.conf:ro
-    secrets:
-      - db_root_username
-      - db_root_password
-      - db_name
-      - db_user
-      - db_password
-    environment:
-      - MONGO_INITDB_DATABASE_FILE=/run/secrets/db_name
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 40s
+      - ./backend/mongo/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
     networks:
       - backend-network
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-      update_config:
-        parallelism: 1
-        delay: 10s
-      rollback_config:
-        parallelism: 1
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
-    # security_opt:
-    #   - no-new-privileges:true
 
   redis:
     image: redis:6.2
@@ -196,57 +100,36 @@ services:
       - redis-data:/data
     networks:
       - backend-network
-    deploy:
-      replicas: 1
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - backend-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.14.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - backend-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kibana.rule=Host(`kibana.${DOMAIN_NAME}`)"
+      - "traefik.http.services.kibana.loadbalancer.server.port=5601"
+      - "traefik.http.routers.kibana.entrypoints=websecure"
+      - "traefik.http.routers.kibana.tls=true"
 
 networks:
   frontend-network:
-    name: ${STACK_NAME}_frontend
-    driver: overlay
-    attachable: true
+    driver: bridge
   backend-network:
-    name: ${STACK_NAME}_backend
-    driver: overlay
-    attachable: true
+    driver: bridge
 
 volumes:
   mongo-data:
-  uploads:
   redis-data:
-
-secrets:
-  domain_name:
-    external: true
-  letsencrypt_email:
-    external: true
-  traefik_auth:
-    external: true
-  rate_limit_average:
-    external: true
-  rate_limit_burst:
-    external: true
-  db_root_username:
-    external: true
-  db_root_password:
-    external: true
-  db_name:
-    external: true
-  db_user:
-    external: true
-  db_password:
-    external: true
-  jwt_secret:
-    external: true
-  encryption_key:
-    external: true
-  email_host:
-    external: true
-  email_port:
-    external: true
-  email_user:
-    external: true
-  email_password:
-    external: true
-  email_from:
-    external: true
+  elasticsearch-data:
