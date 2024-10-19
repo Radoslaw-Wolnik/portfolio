@@ -1,15 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
-import { dockerService } from './docker.service';
 import DockerSession, { IDockerSession } from '../models/docker-session.model';
 import { NotFoundError, BadRequestError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
-import mongoose from 'mongoose';
+import { dockerService } from './docker.service';
 
 class DockerSessionService {
   async createSession(userId: string, projectName: string, username: string): Promise<IDockerSession> {
     try {
       const sessionId = uuidv4();
-      const containerSessionId = await dockerService.createUserSession(projectName, username);
+      const containerSessionId = await dockerService.createExec(projectName, ['su', '-', username]);
 
       const session = new DockerSession({
         sessionId,
@@ -42,33 +41,6 @@ class DockerSessionService {
     return DockerSession.find({ userId, status: 'active' });
   }
 
-  async listAllActiveSessions(): Promise<IDockerSession[]> {
-    return DockerSession.find({ status: 'active' });
-  }
-
-  async switchUser(sessionId: string, newUsername: string): Promise<IDockerSession> {
-    const session = await this.getSession(sessionId); // Fetch the session from MongoDB
-    if (session.status !== 'active') {
-      throw new BadRequestError('Cannot switch user on an inactive session');
-    }
-
-    try {
-      // Switch the user in the Docker container via dockerService
-      await dockerService.switchUser(session.containerSessionId, newUsername);
-      
-      // Update session details
-      session.username = newUsername; // Change the username
-      session.lastSwitchTime = new Date(); // Update the last switch timestamp
-      await session.save(); // Save the updated session in the database
-
-      logger.info(`User switched in Docker session: ${sessionId}`, { newUsername });
-      return session; // Return the updated session object
-    } catch (error) {
-      logger.error(`Failed to switch user in Docker session: ${sessionId}`, error);
-      throw new InternalServerError('Failed to switch user in Docker session');
-    }
-  }
-
   async terminateSession(sessionId: string): Promise<void> {
     const session = await this.getSession(sessionId);
     if (session.status !== 'active') {
@@ -76,8 +48,8 @@ class DockerSessionService {
     }
 
     try {
-      await dockerService.terminateUserSession(session.containerSessionId);
-      
+      // Here we would ideally terminate the exec session, but Dockerode doesn't provide a direct method for this
+      // Instead, we'll just mark the session as terminated in our database
       session.status = 'terminated';
       session.endTime = new Date();
       await session.save();
@@ -131,6 +103,28 @@ class DockerSessionService {
       throw new InternalServerError('Failed to get session statistics');
     }
   }
+
+  async swapUser(sessionId: string, newUsername: string): Promise<IDockerSession> {
+    const session = await this.getSession(sessionId);
+    if (session.status !== 'active') {
+      throw new BadRequestError('Cannot swap user on an inactive session');
+    }
+
+    try {
+      await dockerService.createExec(session.projectName, ['su', '-', newUsername]);
+      
+      session.username = newUsername;
+      session.lastSwitchTime = new Date();
+      await session.save();
+
+      logger.info(`User swapped in Docker session: ${sessionId}`, { newUsername });
+      return session;
+    } catch (error) {
+      logger.error(`Failed to swap user in Docker session: ${sessionId}`, error);
+      throw new InternalServerError('Failed to swap user in Docker session');
+    }
+  }
+  
 }
 
 export const dockerSessionService = new DockerSessionService();

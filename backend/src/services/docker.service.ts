@@ -16,7 +16,6 @@ class DockerService {
     this.docker = new Docker({ socketPath: environment.docker.socketPath });
   }
 
-
   async buildImage(projectName: string, dockerfilePath: string): Promise<void> {
     try {
       const stream = await this.docker.buildImage({
@@ -35,14 +34,47 @@ class DockerService {
     }
   }
 
-  async startContainer(projectName: string, dockerComposeFile: string): Promise<void> {
-    const composePath = path.join('/tmp', projectName, dockerComposeFile);
+  async createExec(containerName: string, command: string[]): Promise<string> {
     try {
-      if (!await fs.access(composePath).then(() => true).catch(() => false)) {
-        throw new NotFoundError('Docker Compose file not found');
-      }
+      const container = this.docker.getContainer(containerName);
+      const exec = await container.exec({
+        Cmd: command,
+        AttachStdin: true,
+        AttachStdout: true,
+        AttachStderr: true,
+        Tty: true
+      });
+      const stream = await exec.start({});
+      return exec.id;
+    } catch (error) {
+      logger.error(`Failed to create exec in container: ${containerName}`, error);
+      throw new InternalServerError('Failed to create exec in container');
+    }
+  }
 
-      await execAsync(`docker-compose -f ${composePath} up -d`);
+  async startProject(projectName: string, dockerComposeFile: string): Promise<void> {
+    try {
+      await execAsync(`docker-compose -f ${dockerComposeFile} -p ${projectName} up -d`);
+      logger.info(`Project started: ${projectName}`);
+    } catch (error) {
+      logger.error(`Failed to start project: ${projectName}`, error);
+      throw new InternalServerError('Failed to start project');
+    }
+  }
+  
+  async stopProject(projectName: string, dockerComposeFile: string): Promise<void> {
+    try {
+      await execAsync(`docker-compose -f ${dockerComposeFile} -p ${projectName} down`);
+      logger.info(`Project stopped: ${projectName}`);
+    } catch (error) {
+      logger.error(`Failed to stop project: ${projectName}`, error);
+      throw new InternalServerError('Failed to stop project');
+    }
+  }
+
+  async startContainer(projectName: string, dockerComposeFile: string): Promise<void> {
+    try {
+      await execAsync(`docker-compose -f ${dockerComposeFile} -p ${projectName} up -d`);
       logger.info(`Container started: ${projectName}`);
     } catch (error) {
       logger.error(`Failed to start container: ${projectName}`, error);
@@ -50,10 +82,9 @@ class DockerService {
     }
   }
 
-  async stopContainer(projectName: string): Promise<void> {
+  async stopContainer(projectName: string, dockerComposeFile: string): Promise<void> {
     try {
-      const container = await this.docker.getContainer(projectName);
-      await container.stop();
+      await execAsync(`docker-compose -f ${dockerComposeFile} -p ${projectName} down`);
       logger.info(`Container stopped: ${projectName}`);
     } catch (error) {
       logger.error(`Failed to stop container: ${projectName}`, error);
@@ -69,94 +100,6 @@ class DockerService {
     } catch (error) {
       logger.error(`Failed to remove image: ${projectName}`, error);
       throw new InternalServerError('Failed to remove Docker image');
-    }
-  }
-
-  
-
-  async createUserSession(projectName: string, username: string): Promise<string> {
-    try {
-      const container = await this.docker.getContainer(projectName);
-      const exec = await container.exec({
-        Cmd: ['su', '-', username],
-        AttachStdin: true,
-        AttachStdout: true,
-        AttachStderr: true,
-        Tty: true
-      });
-
-      const stream = await exec.start({ hijack: true, stdin: true });
-      const sessionId = exec.id;
-
-      logger.info(`User session created: ${sessionId}`, { projectName, username });
-      return sessionId;
-    } catch (error) {
-      logger.error(`Failed to create user session: ${projectName}`, error);
-      throw new InternalServerError('Failed to create user session');
-    }
-  }
-
-  async switchUser(containerSessionId: string, newUsername: string): Promise<void> {
-    try {
-      // Get the container instance from the containerSessionId
-      const container = await this.docker.getContainer(containerSessionId);
-  
-      // Create an exec instance with the 'su' command to switch user
-      const exec = await container.exec({
-        Cmd: ['su', '-', newUsername],  // Define the command here
-        AttachStdin: true,
-        AttachStdout: true,
-        AttachStderr: true,
-        Tty: true
-      });
-  
-      // Start the exec command to switch user
-      await exec.start({
-        hijack: true, // Enables the stream connection for input/output
-        stdin: true
-      });
-  
-      logger.info(`Switched user to ${newUsername} in container session: ${containerSessionId}`);
-    } catch (error) {
-      logger.error(`Failed to switch user in container session: ${containerSessionId}`, error);
-      throw new InternalServerError('Failed to switch user in container session');
-    }
-  }
-  
-
-  async terminateUserSession(containerSessionId: string): Promise<void> {
-    try {
-      // Get the exec instance by its ID
-      const exec = await this.docker.getExec(containerSessionId);
-  
-      // Option 1: Simulate stopping the session (resize or close it gracefully)
-      await exec.resize({ h: 1, w: 1 });  // Minimizing terminal size, an indirect way to stop
-  
-      logger.info(`User session terminated: ${containerSessionId}`);
-    } catch (error) {
-      logger.error(`Failed to terminate user session: ${containerSessionId}`, error);
-      throw new InternalServerError('Failed to terminate user session');
-    }
-  }
-  
-
-  async deployProject(projectName: string, dockerComposeFile: string): Promise<void> {
-    try {
-      const { stdout, stderr } = await execAsync(`docker-compose -f ${dockerComposeFile} -p ${projectName} up -d`);
-      logger.info(`Project deployed: ${projectName}`, { stdout, stderr });
-    } catch (error) {
-      logger.error(`Failed to deploy project: ${projectName}`, error);
-      throw new InternalServerError('Failed to deploy project');
-    }
-  }
-
-  async stopProject(projectName: string, dockerComposeFile: string): Promise<void> {
-    try {
-      const { stdout, stderr } = await execAsync(`docker-compose -f ${dockerComposeFile} -p ${projectName} down`);
-      logger.info(`Project stopped: ${projectName}`, { stdout, stderr });
-    } catch (error) {
-      logger.error(`Failed to stop project: ${projectName}`, error);
-      throw new InternalServerError('Failed to stop project');
     }
   }
 
@@ -182,77 +125,44 @@ class DockerService {
     }
   }
 
-  async freezeContainer(projectName: string): Promise<void> {
+  async freezeContainer(containerName: string): Promise<void> {
     try {
-      const container = await this.docker.getContainer(projectName);
+      const container = this.docker.getContainer(containerName);
       await container.pause();
-      logger.info(`Container frozen: ${projectName}`);
+      logger.info(`Container frozen: ${containerName}`);
     } catch (error) {
-      logger.error(`Failed to freeze container: ${projectName}`, error);
+      logger.error(`Failed to freeze container: ${containerName}`, error);
       throw new InternalServerError('Failed to freeze container');
     }
   }
 
-  async unfreezeContainer(projectName: string): Promise<void> {
+  async unfreezeContainer(containerName: string): Promise<void> {
     try {
-      const container = await this.docker.getContainer(projectName);
+      const container = this.docker.getContainer(containerName);
       await container.unpause();
-      logger.info(`Container unfrozen: ${projectName}`);
+      logger.info(`Container unfrozen: ${containerName}`);
     } catch (error) {
-      logger.error(`Failed to unfreeze container: ${projectName}`, error);
+      logger.error(`Failed to unfreeze container: ${containerName}`, error);
       throw new InternalServerError('Failed to unfreeze container');
     }
   }
 
-  // Freeze all containers for a project
-  async freezeProject(projectName: string): Promise<{name: string }> {
+  async cleanupInactiveContainers(): Promise<string[]> {
     try {
-      const containers = await this.docker.listContainers({
-        all: true, // List all containers, including stopped ones
-        filters: { name: [projectName] } // Filter containers by project name
-      });
-
-      if (containers.length === 0) {
-        throw new NotFoundError(`No containers found for project: ${projectName}`);
+      const containers = await this.docker.listContainers({ all: true });
+      const inactiveContainers = containers.filter(container => container.State !== 'running');
+      
+      const removedContainers: string[] = [];
+      for (const container of inactiveContainers) {
+        await this.docker.getContainer(container.Id).remove();
+        removedContainers.push(container.Id);
+        logger.info(`Removed inactive container: ${container.Id}`);
       }
 
-      for (const containerInfo of containers) {
-        const container = this.docker.getContainer(containerInfo.Id);
-        await container.pause();
-        logger.info(`Container frozen: ${containerInfo.Names[0]}`);
-      }
-
-      logger.info(`All containers frozen for project: ${projectName}`);
-      return {name: projectName }
+      return removedContainers;
     } catch (error) {
-      logger.error(`Failed to freeze project containers: ${projectName}`, error);
-      throw new InternalServerError('Failed to freeze project containers');
-    }
-  }
-
-  // Unfreeze all containers for a project
-  async unfreezeProject(projectName: string): Promise<{name: string }> {
-    try {
-      const containers = await this.docker.listContainers({
-        all: true,
-        filters: { name: [projectName] }
-      });
-
-      if (containers.length === 0) {
-        throw new NotFoundError(`No containers found for project: ${projectName}`);
-      }
-
-      for (const containerInfo of containers) {
-        const container = this.docker.getContainer(containerInfo.Id);
-        await container.unpause();
-        logger.info(`Container unfrozen: ${containerInfo.Names[0]}`);
-      }
-
-      logger.info(`All containers unfrozen for project: ${projectName}`);
-      return {name: projectName }
-    } catch (error) {
-      logger.error(`Failed to unfreeze project containers: ${projectName}`, error);
-      throw new InternalServerError('Failed to unfreeze project containers');
+      logger.error('Failed to cleanup inactive containers', error);
+      throw new InternalServerError('Failed to cleanup inactive containers');
     }
   }
 }

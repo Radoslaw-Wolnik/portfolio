@@ -38,7 +38,7 @@ export class PortfolioController {
         throw new NotFoundError('Project not found');
       }
 
-      await dockerService.deployProject(project.name, project.dockerComposeFile);
+      await dockerService.deployProject(project._id);
       
       for (const container of project.containers) {
         if (container.type === 'frontend' || container.type === 'backend') {
@@ -68,7 +68,7 @@ export class PortfolioController {
         throw new NotFoundError('Project not found');
       }
 
-      await dockerService.stopProject(project.name, project.dockerComposeFile);
+      await dockerService.stopProject(project._id);
       
       for (const container of project.containers) {
         if (container.type === 'frontend' || container.type === 'backend') {
@@ -95,7 +95,7 @@ export class PortfolioController {
       }
 
       if (project.status === 'running') {
-        await dockerService.stopProject(project.name, project.dockerComposeFile);
+        await dockerService.stopProject(project._id);
       }
 
       for (const container of project.containers) {

@@ -1,48 +1,58 @@
-// src/services/network.service.ts
 import Docker from 'dockerode';
 import logger from '../utils/logger.util';
-import { BadRequestError } from '../utils/custom-errors.util';
+import { InternalServerError } from '../utils/custom-errors.util';
+import environment from '../config/environment';
 
 class NetworkService {
   private docker: Docker;
 
   constructor() {
-    this.docker = new Docker({ socketPath: '/var/run/docker.sock' });
+    this.docker = new Docker({ socketPath: environment.docker.socketPath });
   }
 
-  async createProjectNetwork(projectName: string): Promise<void> {
+  async createNetwork(networkName: string): Promise<void> {
     try {
       await this.docker.createNetwork({
-        Name: `${projectName}_network`,
+        Name: networkName,
         Driver: 'bridge',
       });
-      logger.info(`Created network for project: ${projectName}`);
+      logger.info(`Network created: ${networkName}`);
     } catch (error) {
-      logger.error(`Failed to create network for project: ${projectName}`, error);
-      throw new BadRequestError('Failed to create project network');
+      logger.error(`Failed to create network: ${networkName}`, error);
+      throw new InternalServerError('Failed to create network');
     }
   }
 
-  async removeProjectNetwork(projectName: string): Promise<void> {
+  async removeNetwork(networkName: string): Promise<void> {
     try {
-      const network = this.docker.getNetwork(`${projectName}_network`);
+      const network = this.docker.getNetwork(networkName);
       await network.remove();
-      logger.info(`Removed network for project: ${projectName}`);
+      logger.info(`Network removed: ${networkName}`);
     } catch (error) {
-      logger.error(`Failed to remove network for project: ${projectName}`, error);
-      throw new BadRequestError('Failed to remove project network');
+      logger.error(`Failed to remove network: ${networkName}`, error);
+      throw new InternalServerError('Failed to remove network');
     }
   }
 
   async connectContainerToNetwork(containerName: string, networkName: string): Promise<void> {
     try {
-      const container = this.docker.getContainer(containerName);
       const network = this.docker.getNetwork(networkName);
-      await network.connect({ Container: container.id });
-      logger.info(`Connected container ${containerName} to network ${networkName}`);
+      await network.connect({ Container: containerName });
+      logger.info(`Container ${containerName} connected to network ${networkName}`);
     } catch (error) {
       logger.error(`Failed to connect container ${containerName} to network ${networkName}`, error);
-      throw new BadRequestError('Failed to connect container to network');
+      throw new InternalServerError('Failed to connect container to network');
+    }
+  }
+
+  async disconnectContainerFromNetwork(containerName: string, networkName: string): Promise<void> {
+    try {
+      const network = this.docker.getNetwork(networkName);
+      await network.disconnect({ Container: containerName });
+      logger.info(`Container ${containerName} disconnected from network ${networkName}`);
+    } catch (error) {
+      logger.error(`Failed to disconnect container ${containerName} from network ${networkName}`, error);
+      throw new InternalServerError('Failed to disconnect container from network');
     }
   }
 }

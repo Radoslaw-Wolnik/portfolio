@@ -12,7 +12,7 @@ export interface IProject extends Document {
   branch: string;
   dockerComposeFile: string;
   subdomain: string;
-  status: 'running' | 'stopped' | 'error';
+  status: 'running' | 'stopped' | 'error' | 'frozen';
   containers: IContainer[];
 }
 
@@ -28,7 +28,7 @@ const projectSchema = new Schema<IProject>({
   branch: { type: String, required: true, default: 'main' },
   dockerComposeFile: { type: String, required: true, default: 'docker-compose.yml' },
   subdomain: { type: String, required: true, unique: true },
-  status: { type: String, enum: ['running', 'stopped', 'error'], default: 'stopped' },
+  status: { type: String, enum: ['running', 'stopped', 'error', 'frozen'], default: 'stopped' },
   containers: [containerSchema]
 });
 

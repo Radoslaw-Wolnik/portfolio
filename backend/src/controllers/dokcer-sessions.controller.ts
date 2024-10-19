@@ -1,29 +1,30 @@
 import { Response, NextFunction } from 'express';
-import { dockerSessionService } from '../services/docker-session.service';
-import { projectService } from '../services/project.service';
-import { NotFoundError, BadRequestError, InternalServerError, UnauthorizedError } from '../utils/custom-errors.util';
-import logger from '../utils/logger.util';
 // import { AuthRequest } from '../types/global';
+import { dockerSessionService } from '../services/docker-session.service';
+import { NotFoundError, BadRequestError } from '../utils/custom-errors.util';
+import logger from '../utils/logger.util';
 
 export const createSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { projectId, username } = req.body;
-    const project = await projectService.getProjectById(projectId);
-    if (!project) {
-      throw new NotFoundError('Project not found');
-    }
-    if (!req.user.id){
-      throw(UnauthorizedError);
-    }
-    const session = await dockerSessionService.createSession(req.user!.id, project.name, username);
-    logger.info(`Docker session created`, { userId: req.user!._id, projectName: project.name, username });
+    const { projectName, username } = req.body;
+    const session = await dockerSessionService.createSession(req.user!.id, projectName, username);
+    logger.info(`Docker session created`, { userId: req.user!._id, projectName, username });
     res.status(201).json(session);
   } catch (error) {
     next(error);
   }
 };
 
-export const getUserSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const session = await dockerSessionService.getSession(req.params.sessionId);
+    res.json(session);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listUserSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const sessions = await dockerSessionService.listUserSessions(req.user!.id);
     res.json(sessions);
@@ -32,24 +33,11 @@ export const getUserSessions = async (req: AuthRequest, res: Response, next: Nex
   }
 };
 
-export const getAllActiveSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    if (req.user!.role !== 'admin') {
-      throw new BadRequestError('Only admins can view all active sessions');
-    }
-    const sessions = await dockerSessionService.listAllActiveSessions();
-    res.json(sessions);
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const terminateSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { sessionId } = req.params;
-    await dockerSessionService.terminateSession(sessionId);
-    logger.info(`Docker session terminated`, { sessionId, userId: req.user!.id });
-    res.status(204).send();
+    await dockerSessionService.terminateSession(req.params.sessionId);
+    logger.info(`Docker session terminated`, { sessionId: req.params.sessionId, userId: req.user!._id });
+    res.json({ message: 'Session terminated successfully' });
   } catch (error) {
     next(error);
   }
@@ -57,11 +45,20 @@ export const terminateSession = async (req: AuthRequest, res: Response, next: Ne
 
 export const getSessionStats = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (req.user!.role !== 'admin') {
-      throw new BadRequestError('Only admins can view session statistics');
-    }
     const stats = await dockerSessionService.getSessionStats();
     res.json(stats);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const swapUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { sessionId } = req.params;
+    const { newUsername } = req.body;
+    const updatedSession = await dockerSessionService.swapUser(sessionId, newUsername);
+    logger.info(`User swapped in Docker session`, { sessionId, newUsername, userId: req.user!._id });
+    res.json(updatedSession);
   } catch (error) {
     next(error);
   }
