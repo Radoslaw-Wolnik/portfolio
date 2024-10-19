@@ -1,38 +1,20 @@
-// dockersession.model.ts
+// src/models/session.model.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IDockerSessionDocument extends Document {
-  projectName: string;
-  containerId: string;
-  activeUsers: {
-    userId: Schema.Types.ObjectId;
-    username: string;
-    role: string;
-  }[];
+export interface IDockerSession extends Document {
+  userId: Schema.Types.ObjectId;
+  token: string;
+  expiresAt: Date;
   ipAddress: string;
-  startTime: Date;
-  endTime?: Date;
-  revokedTokens: {
-    token: string;
-    expiresAt: Date;
-  }[];
+  userAgent: string;
 }
 
-const dockerSessionSchema = new Schema<IDockerSessionDocument>({
-  projectName: { type: String, required: true },
-  containerId: { type: String, required: true },
-  activeUsers: [{
-    userId: { type: Schema.Types.ObjectId, ref: 'DemoUser', required: true },
-    username: { type: String, required: true },
-    role: { type: String, required: true }
-  }],
+const dockerSessionSchema = new Schema<IDockerSession>({
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  token: { type: String, required: true, unique: true },
+  expiresAt: { type: Date, required: true },
   ipAddress: { type: String, required: true },
-  startTime: { type: Date, required: true },
-  endTime: { type: Date },
-  revokedTokens: [{
-    token: { type: String, required: true },
-    expiresAt: { type: Date, required: true }
-  }]
+  userAgent: { type: String, required: true },
 });
 
-export default mongoose.model<IDockerSessionDocument>('DockerSession', dockerSessionSchema);
+export default mongoose.model<IDockerSession>('DockerSession', dockerSessionSchema);

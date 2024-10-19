@@ -1,19 +1,26 @@
-// project.model.ts
+// src/models/project.model.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IProjectDocument extends Document {
+export interface IProject extends Document {
   name: string;
-  description: string;
+  subdomain: string;
+  gitUrl: string;
+  branch: string;
   dockerComposeFile: string;
-  availableRoles: string[];
+  status: 'running' | 'stopped' | 'error';
+  isDefault: boolean;
+  httpsEnabled: boolean;
 }
 
-const projectSchema = new Schema<IProjectDocument>({
+const projectSchema = new Schema<IProject>({
   name: { type: String, required: true, unique: true },
-  description: { type: String, required: true },
-  dockerComposeFile: { type: String, required: true },
-  availableRoles: [{ type: String }],
+  subdomain: { type: String, required: true, unique: true },
+  gitUrl: { type: String, required: true },
+  branch: { type: String, required: true, default: 'main' },
+  dockerComposeFile: { type: String, required: true, default: 'docker-compose.yml' },
+  status: { type: String, enum: ['running', 'stopped', 'error'], default: 'stopped' },
+  isDefault: { type: Boolean, default: false },
+  httpsEnabled: { type: Boolean, default: true },
 });
 
-export default mongoose.model<IProjectDocument>('Project', projectSchema);
-
+export default mongoose.model<IProject>('Project', projectSchema);

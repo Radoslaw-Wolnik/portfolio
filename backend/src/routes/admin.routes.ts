@@ -7,7 +7,6 @@ import {
   getAllUsers,
   deleteAdmin,
   addAdmin,
-  updateEmailTemplate,
   deleteInactiveUsers,
   updateConfiguration
 } from '../controllers/admin.controller';
@@ -23,8 +22,6 @@ router.get('/users', getAllUsers);
 
 router.delete('/:id', deleteAdmin);
 router.post('/add', addAdmin);
-
-router.put('/email-template/:id', updateEmailTemplate);
 
 router.delete('/inactive-users', authenticateJWT, deleteInactiveUsers);
 router.put('/sensitive-data', authenticateJWT, updateConfiguration);

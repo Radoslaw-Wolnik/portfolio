@@ -1,18 +1,14 @@
+// src/routes/session.routes.ts
 import express from 'express';
 import { authenticateJWT } from '../middleware/auth.middleware';
-import { isAdmin } from '../middleware/role.middleware';
-import {
-  startDockerSession,
-  endDockerSession,
-  getDockerSessionStats
-} from '../controllers/docker-session.controller';
+import * as sessionController from '../controllers/dokcer-sessions.controller';
 
 const router = express.Router();
 
-router.post('/start', startDockerSession);
-router.put('/:id/end', endDockerSession);
+router.use(authenticateJWT);
 
-router.use(authenticateJWT, isAdmin);
-router.get('/stats', getDockerSessionStats);
+router.get('/', sessionController.getUserSessions);
+router.delete('/:id', sessionController.deleteSession);
+router.delete('/', sessionController.deleteAllSessions);
 
 export default router;
