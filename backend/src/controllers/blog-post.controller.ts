@@ -1,40 +1,50 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+//import { AuthRequest } from '../types/global';
 import BlogPost, { IBlogPostDocument } from '../models/blog-post.model';
-import { NotFoundError, ValidationError } from '../utils/custom-errors.util';
+import { NotFoundError, BadRequestError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
 
 export const createBlogPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { title, shortDescription, content, tags } = req.body;
-    const blogPost = new BlogPost({ title, shortDescription, content, tags });
+    const blogPost = new BlogPost({
+      ...req.body,
+      author: req.user!._id
+    });
     await blogPost.save();
-    logger.info('Blog post created', { postId: blogPost._id, createdBy: req.user?.id });
+    logger.info(`Blog post created: ${blogPost._id}`, { userId: req.user!._id });
     res.status(201).json(blogPost);
   } catch (error) {
     next(error);
   }
 };
 
-export const getBlogPosts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getBlogPosts = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { page = 1, limit = 10, tag } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const tag = req.query.tag as string | undefined;
+
     const query = tag ? { tags: tag } : {};
+    const totalPosts = await BlogPost.countDocuments(query);
+    const totalPages = Math.ceil(totalPosts / limit);
+
     const blogPosts = await BlogPost.find(query)
       .sort({ createdAt: -1 })
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit));
-    const total = await BlogPost.countDocuments(query);
+      .skip((page - 1) * limit)
+      .limit(limit);
+
     res.json({
       blogPosts,
-      totalPages: Math.ceil(total / Number(limit)),
-      currentPage: Number(page)
+      currentPage: page,
+      totalPages,
+      totalPosts
     });
   } catch (error) {
-    next(error);
+    next(new InternalServerError('Error fetching blog posts'));
   }
 };
 
-export const getBlogPostById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getBlogPostById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const blogPost = await BlogPost.findById(req.params.id);
     if (!blogPost) {
@@ -48,16 +58,20 @@ export const getBlogPostById = async (req: Request, res: Response, next: NextFun
 
 export const updateBlogPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { title, shortDescription, content, tags } = req.body;
-    const blogPost = await BlogPost.findByIdAndUpdate(
-      req.params.id,
-      { title, shortDescription, content, tags },
-      { new: true, runValidators: true }
-    );
+    const blogPost = await BlogPost.findById(req.params.id);
     if (!blogPost) {
       throw new NotFoundError('Blog post not found');
     }
-    logger.info('Blog post updated', { postId: blogPost._id, updatedBy: req.user?.id });
+
+    // Check if the user is the author of the post or an admin
+    if (blogPost.author.toString() !== req.user!._id && req.user!.role !== 'admin') {
+      throw new BadRequestError('You do not have permission to update this post');
+    }
+
+    Object.assign(blogPost, req.body);
+    await blogPost.save();
+
+    logger.info(`Blog post updated: ${req.params.id}`, { userId: req.user!._id });
     res.json(blogPost);
   } catch (error) {
     next(error);
@@ -66,12 +80,37 @@ export const updateBlogPost = async (req: AuthRequest, res: Response, next: Next
 
 export const deleteBlogPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const blogPost = await BlogPost.findByIdAndDelete(req.params.id);
+    const blogPost = await BlogPost.findById(req.params.id);
     if (!blogPost) {
       throw new NotFoundError('Blog post not found');
     }
-    logger.info('Blog post deleted', { postId: req.params.id, deletedBy: req.user?.id });
+
+    // Check if the user is the author of the post or an admin
+    if (blogPost.author.toString() !== req.user!._id && req.user!.role !== 'admin') {
+      throw new BadRequestError('You do not have permission to delete this post');
+    }
+
+    await blogPost.deleteOne(); // this one?
+    logger.info(`Blog post deleted: ${req.params.id}`, { userId: req.user!._id });
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const searchBlogPosts = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { query } = req.query;
+    if (typeof query !== 'string') {
+      throw new BadRequestError('Invalid search query');
+    }
+
+    const results = await BlogPost.find(
+      { $text: { $search: query } },
+      { score: { $meta: 'textScore' } }
+    ).sort({ score: { $meta: 'textScore' } });
+
+    res.json(results);
   } catch (error) {
     next(error);
   }

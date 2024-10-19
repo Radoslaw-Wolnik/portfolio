@@ -7,6 +7,7 @@ const environment = {
     port: process.env.PORT || 3000,
     nodeEnv: process.env.NODE_ENV || 'development',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+    domain: process.env.DOMAIN || 'http://localhost',
     company: {
       name: process.env.COMPANY_NAME || 'My Company',
       email: process.env.COMPANY_EMAIL || 'info@mycompany.com',
@@ -39,6 +40,9 @@ const environment = {
   },
   docker: {
     socketPath: process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock'
+  },
+  traefik: {
+    configPath: process.env.TRAEFIK_CONFIG_PATH || '/...'
   }
 };
 

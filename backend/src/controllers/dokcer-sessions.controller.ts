@@ -1,13 +1,22 @@
 import { Response, NextFunction } from 'express';
 import { dockerSessionService } from '../services/docker-session.service';
-import { NotFoundError, BadRequestError, InternalServerError } from '../utils/custom-errors.util';
+import { projectService } from '../services/project.service';
+import { NotFoundError, BadRequestError, InternalServerError, UnauthorizedError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
+// import { AuthRequest } from '../types/global';
 
 export const createSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { projectName, username } = req.body;
-    const session = await dockerSessionService.createSession(req.user._id, projectName, username);
-    logger.info(`Docker session created`, { userId: req.user._id, projectName, username });
+    const { projectId, username } = req.body;
+    const project = await projectService.getProjectById(projectId);
+    if (!project) {
+      throw new NotFoundError('Project not found');
+    }
+    if (!req.user.id){
+      throw(UnauthorizedError);
+    }
+    const session = await dockerSessionService.createSession(req.user!.id, project.name, username);
+    logger.info(`Docker session created`, { userId: req.user!._id, projectName: project.name, username });
     res.status(201).json(session);
   } catch (error) {
     next(error);
@@ -16,19 +25,20 @@ export const createSession = async (req: AuthRequest, res: Response, next: NextF
 
 export const getUserSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const sessions = await dockerSessionService.listUserSessions(req.user._id);
+    const sessions = await dockerSessionService.listUserSessions(req.user!.id);
     res.json(sessions);
   } catch (error) {
     next(error);
   }
 };
 
-export const switchUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getAllActiveSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { sessionId, newUsername } = req.body;
-    const updatedSession = await dockerSessionService.switchUser(sessionId, newUsername);
-    logger.info(`User switched in Docker session`, { sessionId, newUsername, userId: req.user._id });
-    res.json(updatedSession);
+    if (req.user!.role !== 'admin') {
+      throw new BadRequestError('Only admins can view all active sessions');
+    }
+    const sessions = await dockerSessionService.listAllActiveSessions();
+    res.json(sessions);
   } catch (error) {
     next(error);
   }
@@ -38,21 +48,20 @@ export const terminateSession = async (req: AuthRequest, res: Response, next: Ne
   try {
     const { sessionId } = req.params;
     await dockerSessionService.terminateSession(sessionId);
-    logger.info(`Docker session terminated`, { sessionId, userId: req.user._id });
+    logger.info(`Docker session terminated`, { sessionId, userId: req.user!.id });
     res.status(204).send();
   } catch (error) {
     next(error);
   }
 };
 
-export const terminateAllSessions = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getSessionStats = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const sessions = await dockerSessionService.listUserSessions(req.user._id);
-    for (const session of sessions) {
-      await dockerSessionService.terminateSession(session.sessionId);
+    if (req.user!.role !== 'admin') {
+      throw new BadRequestError('Only admins can view session statistics');
     }
-    logger.info(`All Docker sessions terminated for user`, { userId: req.user._id });
-    res.status(204).send();
+    const stats = await dockerSessionService.getSessionStats();
+    res.json(stats);
   } catch (error) {
     next(error);
   }

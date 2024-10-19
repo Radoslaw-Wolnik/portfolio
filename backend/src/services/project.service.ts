@@ -1,100 +1,47 @@
-
-// src/services/project.service.ts
 import Project, { IProject } from '../models/project.model';
-import { dockerService } from './docker.service';
-import { routingService } from './routing.service';
 import { NotFoundError, BadRequestError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
 
-class ProjectService {
+export class ProjectService {
   async createProject(projectData: Partial<IProject>): Promise<IProject> {
     const project = new Project(projectData);
     await project.save();
-    
-
-    await dockerService.pullRepository(project.gitUrl, project.branch, project.name);
-    await dockerService.buildImage(project.name, project.dockerComposeFile);
-    
-    if (project.status === 'running') {
-      await this.startProject(project.id);
-    }
-
     logger.info(`Project created: ${project.name}`);
     return project;
   }
 
-  async updateProject(id: string, updateData: Partial<IProject>): Promise<IProject> {
-    const project = await Project.findByIdAndUpdate(id, updateData, { new: true });
+  async getProjectById(projectId: string): Promise<IProject | null> {
+    return Project.findById(projectId);
+  }
+
+  async updateProject(projectId: string, projectData: Partial<IProject>): Promise<IProject> {
+    const project = await Project.findByIdAndUpdate(projectId, projectData, { new: true, runValidators: true });
     if (!project) {
       throw new NotFoundError('Project not found');
     }
-
-
-    if (updateData.status === 'running' && project.status !== 'running') {
-      await this.startProject(project.id);
-    } else if (updateData.status === 'stopped' && project.status !== 'stopped') {
-      await this.stopProject(project.id);
-    }
-
     logger.info(`Project updated: ${project.name}`);
     return project;
   }
 
-  async deleteProject(id: string): Promise<void> {
-    const project = await Project.findById(id);
+  async deleteProject(projectId: string): Promise<void> {
+    const project = await Project.findByIdAndDelete(projectId);
     if (!project) {
       throw new NotFoundError('Project not found');
     }
-
-    if (project.status === 'running') {
-      await this.stopProject(id);
-    }
-
-    await dockerService.removeImage(project.name);
-    await Project.findByIdAndDelete(id);
     logger.info(`Project deleted: ${project.name}`);
   }
 
-  async startProject(id: string): Promise<IProject> {
-    const project = await Project.findById(id);
-    if (!project) {
-      throw new NotFoundError('Project not found');
-    }
-
-    if (project.status === 'running') {
-      throw new BadRequestError('Project is already running');
-    }
-
-    await dockerService.startContainer(project.name, project.dockerComposeFile);
-    await routingService.addProjectRoute(project.name, project.subdomain, project.httpsEnabled);
-    
-    project.status = 'running';
-    await project.save();
-    
-    logger.info(`Project started: ${project.name}`);
-    return project;
+  async getAllProjects(): Promise<IProject[]> {
+    return Project.find();
   }
 
-  async stopProject(id: string): Promise<IProject> {
-    const project = await Project.findById(id);
-    if (!project) {
-      throw new NotFoundError('Project not found');
-    }
+  async getProjectStats(): Promise<any> {
+    const totalProjects = await Project.countDocuments();
+    const runningProjects = await Project.countDocuments({ status: 'running' });
+    const stoppedProjects = await Project.countDocuments({ status: 'stopped' });
 
-    if (project.status !== 'running') {
-      throw new BadRequestError('Project is not running');
-    }
-
-    await dockerService.stopContainer(project.name);
-    await routingService.removeProjectRoute(project.name);
-    
-    project.status = 'stopped';
-    await project.save();
-    
-    logger.info(`Project stopped: ${project.name}`);
-    return project;
+    return { totalProjects, runningProjects, stoppedProjects };
   }
-
 }
 
 export const projectService = new ProjectService();

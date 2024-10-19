@@ -1,54 +1,73 @@
-// src/services/routing.service.ts
 import fs from 'fs/promises';
-import path from 'path';
 import yaml from 'js-yaml';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import logger from '../utils/logger.util';
-import { BadRequestError } from '../utils/custom-errors.util';
+import { BadRequestError, InternalServerError } from '../utils/custom-errors.util';
+import environment from '../config/environment';
 
 const execAsync = promisify(exec);
 
-interface TraefikRule {
-  [key: string]: {
-    rule: string;
-    service: string;
-    tls?: { certresolver: string };
-  };
-}
-
-class RoutingService {
+export class RoutingService {
   private traefikConfigPath: string;
 
   constructor() {
-    this.traefikConfigPath = process.env.TRAEFIK_CONFIG_PATH || '/etc/traefik/dynamic_conf/routing.yml';
+    this.traefikConfigPath = environment.traefik.configPath;
   }
 
-  async addProjectRoute(projectName: string, subdomain: string, httpsEnabled: boolean): Promise<void> {
-    const config = await this.getTraefikConfig();
-    
-    config.http.routers[projectName] = {
-      rule: `Host(\`${subdomain}.${process.env.DOMAIN_NAME}\`)`,
-      service: projectName,
-    };
-
-    if (httpsEnabled) {
-      config.http.routers[projectName].tls = { certresolver: 'myresolver' };
+  async addProjectRoute(projectName: string, subdomain: string, path: string): Promise<void> {
+    try {
+      const config = await this.getTraefikConfig();
+  
+      // Include the path in the routing rule
+      config.http.routers[projectName] = {
+        rule: `Host(\`${subdomain}.${environment.app.domain}\`) && PathPrefix(\`${path}\`)`,  // PathPrefix is added here
+        service: projectName,
+        tls: { certresolver: 'myresolver' }
+      };
+  
+      await this.saveTraefikConfig(config);
+      await this.reloadTraefik();
+      logger.info(`Added route for project: ${projectName} with path: ${path}`);
+    } catch (error) {
+      logger.error(`Failed to add route for project: ${projectName}`, error);
+      throw new InternalServerError('Failed to add project route');
     }
+  }
+  
 
-    await this.saveTraefikConfig(config);
-    await this.reloadTraefik();
-    logger.info(`Added route for project: ${projectName}`);
+  async updateProjectRoute(projectName: string, newSubdomain: string): Promise<void> {
+    try {
+      const config = await this.getTraefikConfig();
+      
+      if (!config.http.routers[projectName]) {
+        throw new BadRequestError(`Route for project ${projectName} not found`);
+      }
+
+      config.http.routers[projectName].rule = `Host(\`${newSubdomain}.${environment.app.domain}\`)`;
+
+      await this.saveTraefikConfig(config);
+      await this.reloadTraefik();
+      logger.info(`Updated route for project: ${projectName}`);
+    } catch (error) {
+      logger.error(`Failed to update route for project: ${projectName}`, error);
+      throw new InternalServerError('Failed to update project route');
+    }
   }
 
   async removeProjectRoute(projectName: string): Promise<void> {
-    const config = await this.getTraefikConfig();
-    
-    delete config.http.routers[projectName];
+    try {
+      const config = await this.getTraefikConfig();
+      
+      delete config.http.routers[projectName];
 
-    await this.saveTraefikConfig(config);
-    await this.reloadTraefik();
-    logger.info(`Removed route for project: ${projectName}`);
+      await this.saveTraefikConfig(config);
+      await this.reloadTraefik();
+      logger.info(`Removed route for project: ${projectName}`);
+    } catch (error) {
+      logger.error(`Failed to remove route for project: ${projectName}`, error);
+      throw new InternalServerError('Failed to remove project route');
+    }
   }
 
   private async getTraefikConfig(): Promise<any> {

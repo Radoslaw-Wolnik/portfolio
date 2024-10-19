@@ -72,4 +72,11 @@ userSchema.statics.createDefaultAdmin = async function(): Promise<IUserDocument>
   return newAdmin;
 };
 
+// Automatically remove the password field when calling `toJSON` or `toObject`
+userSchema.methods.toJSON = function() {
+  const user = this.toObject(); // Cast to type-safe object with optional password
+  delete user.password;
+  return user;
+};
+
 export default mongoose.model<IUserDocument, IUserModel>('User', userSchema);

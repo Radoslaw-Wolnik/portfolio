@@ -1,102 +1,35 @@
 import { Response, NextFunction } from 'express';
-import User from '../models/user.model';
-import { NotFoundError, BadRequestError, InternalServerError, ValidationError } from '../utils/custom-errors.util';
+// import { AuthRequest } from '../types/global';
+import { projectService } from '../services/project.service';
+import { dockerSessionService } from '../services/docker-session.service';
+import { monitoringService } from '../services/monitoring.service';
+import { BadRequestError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
-import { sanitizeData } from '../utils/sanitize.util';
-import { ConfigService } from '../services/config.service';
 
-export const getAdmins = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getDashboardStats = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const admins = await User.find({ role: 'admin' }).select('-password');
-    logger.info('Admin list retrieved', { userId: req.user?.id, count: admins.length });
-    res.json(sanitizeData(admins));
-  } catch (error) {
-    next(new InternalServerError('Error fetching admins'));
-  }
-};
+    const projectStats = await projectService.getProjectStats();
+    const sessionStats = await dockerSessionService.getSessionStats();
+    // const systemMetrics = await monitoringService.getSystemMetrics();
 
-export const getAllUsers = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const users = await User.find().select('-password');
-    logger.info('All users list retrieved', { userId: req.user?.id, count: users.length });
-    res.json(sanitizeData(users));
-  } catch (error) {
-    next(new InternalServerError('Error fetching all users'));
-  }
-};
-
-export const deleteAdmin = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const deletedAdmin = await User.findOneAndDelete({ _id: id, role: 'admin' });
-    if (!deletedAdmin) {
-      throw new NotFoundError('Admin');
-    }
-    logger.warn('Admin account deleted', { deletedAdminId: id, deletedBy: req.user?.id });
-    res.status(204).send();
-  } catch (error) {
-    next(error instanceof NotFoundError ? error : new InternalServerError('Error deleting admin'));
-  }
-};
-
-export const addAdmin = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { username, password, email } = req.body;
-    if (!username || !password || !email) {
-      throw new ValidationError('Username, password, and email are required');
-    }
-
-    const newAdmin = new User({
-      username,
-      email,
-      password,
-      role: 'admin'
+    res.json({
+      projects: projectStats,
+      sessions: sessionStats,
     });
-    await newAdmin.save();
-    logger.info('New admin account created', { newAdminId: newAdmin._id, createdBy: req.user?.id });
-
-    const { password: _, ...adminWithoutPassword } = newAdmin.toObject();
-    res.status(201).json(sanitizeData(adminWithoutPassword));
   } catch (error) {
-    next(error instanceof ValidationError ? error : new InternalServerError('Error adding admin'));
+    next(new InternalServerError('Error fetching dashboard stats'));
   }
 };
 
 
-export const deleteInactiveUsers = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+/*
+export const getSystemLogs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const result = await User.deleteMany({ lastTimeActive: { $lt: thirtyDaysAgo }, role: { $ne: 'admin' } });
-    logger.info('Inactive users deleted', { count: result.deletedCount, deletedBy: req.user?.id });
-    res.json({ message: `${result.deletedCount} inactive users deleted` });
+    const { startDate, endDate, level } = req.query;
+    const logs = await monitoringService.getLogs(startDate as string, endDate as string, level as string);
+    res.json(logs);
   } catch (error) {
-    next(new InternalServerError('Error deleting inactive users'));
+    next(new InternalServerError('Error fetching system logs'));
   }
 };
-
-export const updateConfiguration = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { config } = req.body;
-
-    // Basic validation
-    if (typeof config !== 'object' || config === null) {
-      throw new ValidationError('Invalid configuration format');
-    }
-
-    // Update the configuration
-    const updatedConfig = ConfigService.updateConfiguration(config);
-
-    logger.info('Configuration updated', { 
-      updatedBy: req.user?.id, 
-      changedFields: Object.keys(config) 
-    });
-
-    res.json({ message: 'Configuration updated successfully', config: updatedConfig });
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      next(error);
-    } else {
-      next(new InternalServerError('Error updating configuration'));
-    }
-  }
-};
+*/

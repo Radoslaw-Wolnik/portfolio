@@ -1,4 +1,3 @@
-// src/routes/auth.routes.ts
 import express from 'express';
 import { login, loginDemo, refreshToken, logout } from '../controllers/auth.controller';
 import { authenticateJWT } from '../middleware/auth.middleware';

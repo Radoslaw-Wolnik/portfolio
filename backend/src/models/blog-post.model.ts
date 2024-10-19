@@ -6,10 +6,11 @@ export interface IBlogPostDocument extends Document {
   content: [{
     type: 'text' | 'code' | 'image' | 'link';
     content: string;
-    language?: string; // for code blocks
-    alt?: string; // for images
+    language?: string;
+    alt?: string;
   }];
   tags: string[];
+  author: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +25,10 @@ const blogPostSchema = new Schema<IBlogPostDocument>({
     alt: String,
   }],
   tags: [{ type: String }],
+  author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
+
+// Add text index for search functionality
+blogPostSchema.index({ title: 'text', shortDescription: 'text', 'content.content': 'text', tags: 'text' });
 
 export default mongoose.model<IBlogPostDocument>('BlogPost', blogPostSchema);

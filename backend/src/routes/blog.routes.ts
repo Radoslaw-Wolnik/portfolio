@@ -6,17 +6,19 @@ import {
   getBlogPosts,
   getBlogPostById,
   updateBlogPost,
-  deleteBlogPost
+  deleteBlogPost,
+  searchBlogPosts
 } from '../controllers/blog-post.controller';
 
 const router = express.Router();
 
 router.get('/', getBlogPosts);
+router.get('/search', searchBlogPosts);
 router.get('/:id', getBlogPostById);
 
 router.use(authenticateJWT);
-router.post('/', isAdmin, createBlogPost);
-router.put('/:id', isAdmin, updateBlogPost);
-router.delete('/:id', isAdmin, deleteBlogPost);
+router.post('/', createBlogPost);
+router.put('/:id', updateBlogPost);
+router.delete('/:id', deleteBlogPost);
 
 export default router;

@@ -1,29 +1,16 @@
-// routes/adminRoutes.ts
-import express, { Router } from 'express';
-import { authenticateJWT} from '../middleware/auth.middleware';
+import express from 'express';
+import { authenticateJWT } from '../middleware/auth.middleware';
 import { isAdmin } from '../middleware/role.middleware';
-import {
-  getAdmins,
-  getAllUsers,
-  deleteAdmin,
-  addAdmin,
-  deleteInactiveUsers,
-  updateConfiguration
-} from '../controllers/admin.controller';
+import * as adminController from '../controllers/admin.controller';
 
+const router = express.Router();
 
-const router: Router = express.Router();
-
-// Ensure all routes are protected and require admin privileges
 router.use(authenticateJWT, isAdmin);
 
-router.get('/admins', getAdmins);
-router.get('/users', getAllUsers);
-
-router.delete('/:id', deleteAdmin);
-router.post('/add', addAdmin);
-
-router.delete('/inactive-users', authenticateJWT, deleteInactiveUsers);
-router.put('/sensitive-data', authenticateJWT, updateConfiguration);
+router.get('/dashboard-stats', adminController.getDashboardStats);
+router.post('/manage-users', adminController.manageUsers);
+router.post('/manage-demo-users', adminController.manageDemoUsers);
+router.get('/system-logs', adminController.getSystemLogs);
+router.put('/system-configuration', adminController.manageSystemConfiguration);
 
 export default router;
