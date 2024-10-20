@@ -1,8 +1,10 @@
 // src/components/DemoProject.tsx
-import React, { useState } from 'react';
-import api from '@utils/api';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@hooks/useAuth';
+import * as projectApi from '../api/project';
+import * as dockerSessionApi from '../api/dockerSession';
 import { handleApiError } from '@utils/errorHandler';
-import { Project, DemoUser } from '@types/api';
+import getEnv from '../config/environment';
 
 interface DemoProjectProps {
   project: Project;
@@ -11,12 +13,26 @@ interface DemoProjectProps {
 const DemoProject: React.FC<DemoProjectProps> = ({ project }) => {
   const [demoUser, setDemoUser] = useState<DemoUser | null>(null);
   const [loading, setLoading] = useState(false);
+  const [projectDomain, setProjectDomain] = useState('');
+  const { loginDemo } = useAuth();
+
+  useEffect(() => {
+    const loadEnvironment = async () => {
+      const env = await getEnv();
+      setProjectDomain(env.PROJECT_DOMAIN);
+    };
+    loadEnvironment();
+  }, []);
 
   const startDemo = async () => {
     setLoading(true);
     try {
-      const response = await api.post(`/projects/${project.id}/demo`);
-      setDemoUser(response.data);
+      const response = await projectApi.deployProject(project.id);
+      if (response.data.message === 'Project deployed successfully') {
+        const sessionResponse = await dockerSessionApi.createSession(project.name, 'demo_user');
+        setDemoUser(sessionResponse.data.data);
+        await loginDemo(sessionResponse.data.data.username, 'demo_password', project.id);
+      }
     } catch (error) {
       console.error('Error starting demo:', handleApiError(error));
     } finally {
@@ -28,8 +44,8 @@ const DemoProject: React.FC<DemoProjectProps> = ({ project }) => {
     if (!demoUser) return;
     setLoading(true);
     try {
-      const response = await api.post(`/docker-sessions/${demoUser.id}/swap-user`, { newUsername });
-      setDemoUser(response.data);
+      const response = await dockerSessionApi.swapUser(demoUser.id, newUsername);
+      setDemoUser(response.data.data);
     } catch (error) {
       console.error('Error swapping user:', handleApiError(error));
     } finally {
@@ -70,7 +86,7 @@ const DemoProject: React.FC<DemoProjectProps> = ({ project }) => {
             </button>
           </div>
           <a
-            href={`https://${project.subdomain}.yourdomain.com`}
+            href={`https://${project.subdomain}.${projectDomain}`}
             target="_blank"
             rel="noopener noreferrer"
             className="block text-center bg-accent-500 text-white px-4 py-2 rounded hover:bg-accent-600"
