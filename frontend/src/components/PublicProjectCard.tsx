@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { handleApiError } from '../utils/errorHandler';
-import getEnv from '../config/environment';
+import { useEnvironment } from '@/hooks/useEnvironment';
 
 interface ProjectCardProps {
   project: Project;
@@ -9,17 +9,10 @@ interface ProjectCardProps {
 
 const PublicProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   const [loading, setLoading] = useState(false);
-  const [projectDomain, setProjectDomain] = useState('');
   const [currentProject, setCurrentProject] = useState(project);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const env = useEnvironment();
 
-  useEffect(() => {
-    const loadEnvironment = async () => {
-      const env = await getEnv();
-      setProjectDomain(env.PROJECT_DOMAIN);
-    };
-    loadEnvironment();
-  }, []);
 
   const handleProjectAction = async (action: 'deploy' | 'stop' | 'freeze' | 'unfreeze') => {
     setLoading(true);
@@ -45,7 +38,7 @@ const PublicProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         username: 'public_user' // You might want to generate a unique username for each public session
       });
       setSessionId(response.data.sessionId);
-      const projectUrl = `https://${currentProject.subdomain}.${projectDomain}`;
+      const projectUrl = `https://${currentProject.subdomain}.${env.PROJECT_DOMAIN}`; // im not so sure about this one
       window.open(projectUrl, '_blank');
     } catch (error) {
       console.error('Error starting public demo:', handleApiError(error));

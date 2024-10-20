@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import api from '../utils/api';
 import { handleApiError } from '../utils/errorHandler';
 import getEnv from '../config/environment';
+import { useEnvironment } from '@/hooks/useEnvironment';
 
 interface DemoUserProjectCardProps {
   project: Project;
@@ -12,16 +13,10 @@ const DemoUserProjectCard: React.FC<DemoUserProjectCardProps> = ({ project }) =>
   const [demoUsers, setDemoUsers] = useState<DemoUser[]>([]);
   const [selectedDemoUser, setSelectedDemoUser] = useState<DemoUser | null>(null);
   const [loading, setLoading] = useState(false);
-  const [projectDomain, setProjectDomain] = useState('');
   const { loginDemo, signalProjectExit } = useAuth();
+  const env = useEnvironment();
 
   useEffect(() => {
-    const loadEnvironment = async () => {
-      const env = await getEnv();
-      setProjectDomain(env.PROJECT_DOMAIN);
-    };
-    loadEnvironment();
-
     const fetchDemoUsers = async () => {
       try {
         const response = await api.get(`/api/demo-users/${project.id}`);
@@ -43,7 +38,7 @@ const DemoUserProjectCard: React.FC<DemoUserProjectCardProps> = ({ project }) =>
         username: selectedDemoUser.username
       });
       await loginDemo(selectedDemoUser.username, 'demo_password', project.id);
-      const projectUrl = `https://${project.subdomain}.${projectDomain}`;
+      const projectUrl = `https://${project.subdomain}.${env.PROJECT_DOMAIN}`;
       const newWindow = window.open(projectUrl, '_blank');
       
       if (newWindow) {

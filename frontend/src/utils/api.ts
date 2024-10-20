@@ -1,8 +1,12 @@
 // src/utils/api.ts
 import axios from 'axios';
+import getEnv from '@/config/environment';
+import { useEnvironment } from '@/hooks/useEnvironment';
+
+const env = useEnvironment();
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
+  baseURL: env.API_URL,
   withCredentials: true,
 });
 
