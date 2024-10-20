@@ -27,7 +27,7 @@ const BlogPostList: React.FC = () => {
         // Fetch all unique tags
         const tagsResponse = await blogApi.getBlogPosts(1, 1000); // Assuming this endpoint returns tags
         const allTags = tagsResponse.data.data.flatMap(post => post.tags);
-        setTags([...new Set(allTags)]);
+        setTags(Array.from(new Set(allTags)));
       } catch (err) {
         setError(handleApiError(err));
       } finally {
