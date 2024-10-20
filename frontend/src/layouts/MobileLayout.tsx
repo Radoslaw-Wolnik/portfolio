@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import MobileHeader from '@components/MobileHeader';
 import Footer from '@components/Footer';
-import { useAuth } from '@contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@components/LoadingSpinner';
 
 const MobileLayout: React.FC = () => {
