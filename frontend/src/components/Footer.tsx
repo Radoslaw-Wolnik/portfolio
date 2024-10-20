@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-xl font-bold mb-4">About Me</h3>
             <p className="text-secondary-300">
-              I'm a passionate full-stack developer creating innovative web solutions. 
+              I&apos;m a passionate full-stack developer creating innovative web solutions. 
               My portfolio showcases my projects and thoughts on web development.
             </p>
           </div>

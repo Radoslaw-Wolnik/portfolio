@@ -11,7 +11,7 @@ const HomePage: React.FC = () => {
       <section className="text-center">
         <h1 className="text-5xl font-bold mb-4">Welcome to My Portfolio</h1>
         <p className="text-xl text-gray-600">
-          {user ? `Hello, ${user.username}!` : 'Hi there! I\'m a full-stack developer passionate about creating innovative web solutions.'}
+          {user ? `Hello, ${user.username}!` : 'Hi there! I&apos;m a full-stack developer passionate about creating innovative web solutions.'}
         </p>
       </section>
 

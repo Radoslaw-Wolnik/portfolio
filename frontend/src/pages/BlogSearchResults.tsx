@@ -35,7 +35,7 @@ const BlogSearchResults: React.FC = () => {
 
   return (
     <div className="container mx-auto mt-10">
-      <h1 className="text-3xl font-bold mb-5">Search Results for "{query}"</h1>
+      <h1 className="text-3xl font-bold mb-5">Search Results for &quot;{query}&quot;</h1>
       {posts.length === 0 ? (
         <p>No results found.</p>
       ) : (
