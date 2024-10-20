@@ -50,7 +50,7 @@ const HomePage: React.FC = () => {
       <section className="bg-secondary-100 rounded-lg p-8 text-center">
         <h2 className="text-3xl font-semibold mb-4">Get in Touch</h2>
         <p className="text-xl text-gray-600 mb-6">
-          Interested in working together? Let's connect!
+          Interested in working together? Let&apos;s connect!
         </p>
         <Link
           to="/contact"
