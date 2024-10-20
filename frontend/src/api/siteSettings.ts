@@ -1,6 +1,5 @@
-// api/siteSettings.ts
+// src/api/siteSettings.ts
 import apiClient from './client';
-import { SiteSettings, ApiResponse } from '@types/api';
 
 export const getSiteSettings = async (): Promise<ApiResponse<SiteSettings>> => {
   const response = await apiClient.get<ApiResponse<SiteSettings>>('/site-settings');

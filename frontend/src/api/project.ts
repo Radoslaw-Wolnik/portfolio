@@ -1,6 +1,6 @@
-// api/project.ts
+// src/api/project.ts
 import apiClient from './client';
-import { Project, ApiResponse } from '@types/api';
+import { PaginatedResponse } from '../types/api'; // @types doesnt work :<
 
 export const createProject = async (projectData: Omit<Project, 'id' | 'status'>): Promise<ApiResponse<Project>> => {
   const response = await apiClient.post<ApiResponse<Project>>('/projects', projectData);
@@ -22,8 +22,8 @@ export const deleteProject = async (id: string): Promise<ApiResponse<null>> => {
   return response.data;
 };
 
-export const getAllProjects = async (): Promise<ApiResponse<Project[]>> => {
-  const response = await apiClient.get<ApiResponse<Project[]>>('/projects');
+export const getAllProjects = async (page: number = 1, limit: number = 10): Promise<ApiResponse<PaginatedResponse<Project>>> => {
+  const response = await apiClient.get<ApiResponse<PaginatedResponse<Project>>>('/projects', { params: { page, limit } });
   return response.data;
 };
 

@@ -1,6 +1,5 @@
-// api/auth.ts
+// src/api/auth.ts
 import apiClient from './client';
-import { User, DemoUser, ApiResponse } from '@types/api';
 
 export const login = async (email: string, password: string): Promise<ApiResponse<User>> => {
   const response = await apiClient.post<ApiResponse<User>>('/auth/login', { email, password });

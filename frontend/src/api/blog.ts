@@ -1,14 +1,14 @@
-// api/blog.ts
+// src/api/blog.ts
 import apiClient from './client';
-import { BlogPost, ApiResponse } from '@types/api';
+import { PaginatedResponse } from '../types/api'; // @types doesnt work :<
 
 export const createBlogPost = async (postData: Omit<BlogPost, 'id' | 'author' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<BlogPost>> => {
   const response = await apiClient.post<ApiResponse<BlogPost>>('/blog', postData);
   return response.data;
 };
 
-export const getBlogPosts = async (page: number = 1, limit: number = 10, tag?: string): Promise<ApiResponse<{ blogPosts: BlogPost[], currentPage: number, totalPages: number, totalPosts: number }>> => {
-  const response = await apiClient.get<ApiResponse<{ blogPosts: BlogPost[], currentPage: number, totalPages: number, totalPosts: number }>>('/blog', { params: { page, limit, tag } });
+export const getBlogPosts = async (page: number = 1, limit: number = 10, tag?: string): Promise<ApiResponse<PaginatedResponse<BlogPost>>> => {
+  const response = await apiClient.get<ApiResponse<PaginatedResponse<BlogPost>>>('/blog', { params: { page, limit, tag } });
   return response.data;
 };
 

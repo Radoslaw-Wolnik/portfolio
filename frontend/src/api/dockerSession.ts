@@ -1,6 +1,5 @@
-// api/dockerSession.ts
+// src/api/dockerSession.ts
 import apiClient from './client';
-import { DockerSession, ApiResponse } from '@types/api';
 
 export const createSession = async (projectName: string, username: string): Promise<ApiResponse<DockerSession>> => {
   const response = await apiClient.post<ApiResponse<DockerSession>>('/docker-sessions', { projectName, username });
