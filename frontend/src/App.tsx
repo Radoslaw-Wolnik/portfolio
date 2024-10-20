@@ -1,71 +1,79 @@
-
+// src/App.tsx
 import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from '@contexts/AuthContext';
+import ProtectedRoute from '@components/ProtectedRoute';
 
-import LandingPageLayout from './layouts/LandingPageLayout'
+// Layouts
+import LandingPageLayout from '@layouts/LandingPageLayout';
 
-import HomePage from './pages/HomePage';
-import About from './pages/About';
-import VerifyEmail from './pages/VerifyEmail';
-import ResetPassword from './pages/RestPassword';
-import Profile from './pages/Profile';
+// Public Pages
+import HomePage from '@pages/HomePage';
+import BlogPostList from '@pages/BlogPostList';
+import BlogPost from '@pages/BlogPost';
+import BlogSearchResults from '@pages/BlogSearchResults';
+import ProjectsPage from '@pages/ProjectsPage';
+import Login from '@pages/Login';
+import RegisterPage from '@pages/RegisterPage';
+import ForgotPasswordPage from '@pages/ForgotPasswordPage';
+import ResetPasswordPage from '@pages/ResetPasswordPage';
+import EmailVerificationPage from '@pages/EmailVerificationPage';
 
-import ProtectedRoute from './components/ProtectedRoute';
+// Protected Pages
+import UserProfile from '@pages/UserProfile';
 
-import AudioGenerator from './pages/AudioGeneratorPage';
-import PresetManagerPage from './pages/SampleManagerPage';
-import CollectionPage from './pages/CollectionPage';
-import CreateSamplePage from './pages/CreateSamplePage';
+// Admin Pages
+import AdminDashboard from '@pages/AdminDashboard';
+import BlogPostEditor from '@pages/BlogPostEditor';
+import ProjectManagement from '@pages/ProjectManagement';
+import UserListAdmin from '@pages/UserListAdmin';
+import UserEditAdmin from '@pages/UserEditAdmin';
+import SiteSettingsAdmin from '@pages/SiteSettingsAdmin';
+import ProjectDeploymentStatus from '@pages/ProjectDeploymentStatus';
+import ProjectResourceMonitoring from '@pages/ProjectResourceMonitoring';
+import DemoUserManagement from '@pages/DemoUserManagement';
 
-import AdminAddDefaultSoundPage from './pages/AdminAddDefaultSoundPage';
-import AdminManagementPage from './pages/AdminManagementPage';
-import TokenRefresh from './components/TokenRefresh';
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route element={<LandingPageLayout />}>
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/blog" element={<BlogPostList />} />
+            <Route path="/blog/:id" element={<BlogPost />} />
+            <Route path="/blog/search" element={<BlogSearchResults />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/verify-email/:token" element={<EmailVerificationPage />} />
 
-import './style/All.css'
-import './style/Modal.css'
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<UserProfile />} />
+            </Route>
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <LandingPageLayout />,
-    children: [
-      { path: '/', element: <HomePage /> },
-      { path: '/about', element: <About /> },
-      { path: '/verify-email/:token', element: <VerifyEmail /> },
-      { path: '/reset-password/:token', element: <ResetPassword /> },
-      {
-        path: '/profile/:userId?',
-        element: <ProtectedRoute><Profile /></ProtectedRoute>
-      },
-      { path: '/generate', element: <ProtectedRoute><AudioGenerator /></ProtectedRoute> },
-      { path: '/collections', element: <ProtectedRoute><CollectionPage /></ProtectedRoute> },
-      { path: '/preset-manage', element: <ProtectedRoute><PresetManagerPage /></ProtectedRoute> },
-      { path: '/create-sample', element: <ProtectedRoute><CreateSamplePage /></ProtectedRoute> },
-    
-      { path: '/admin/add-default-sound', element: <ProtectedRoute><AdminAddDefaultSoundPage /></ProtectedRoute> },
-      { path: '/admin/manage', element: <ProtectedRoute><AdminManagementPage /></ProtectedRoute> }
-    ],
-  },
-]);
-
-// prev
-//const App: React.FC = () => <RouterProvider router={router} />;
-
-// now
-const App: React.FC = () => (
-  <>
-    <TokenRefresh />
-    <RouterProvider router={router} />
-  </>
-);
-
-/* The normal AuthProvider context folded app look
- * const App: React.FC = () => (
- *   <AuthProvider>
- *     <TokenRefresh />
- *     <RouterProvider router={router} />
- *   </AuthProvider>
- * );
- */
+            {/* Admin Routes */}
+            <Route element={<ProtectedRoute adminOnly />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/blog/new" element={<BlogPostEditor />} />
+              <Route path="/admin/blog/edit/:id" element={<BlogPostEditor />} />
+              <Route path="/admin/projects" element={<ProjectManagement />} />
+              <Route path="/admin/users" element={<UserListAdmin />} />
+              <Route path="/admin/users/:id" element={<UserEditAdmin />} />
+              <Route path="/admin/site-settings" element={<SiteSettingsAdmin />} />
+              <Route path="/admin/project-deployment" element={<ProjectDeploymentStatus />} />
+              <Route path="/admin/project-monitoring" element={<ProjectResourceMonitoring />} />
+              <Route path="/admin/demo-users" element={<DemoUserManagement />} />
+            </Route>
+          </Route>
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+};
 
 export default App;
