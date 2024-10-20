@@ -28,7 +28,10 @@ RUN npm install -g tsx@latest typescript@latest
 # or insted in volumes in docekr-compose
 
 # Make uploads dir in development setup
-RUN mkdir -p /app/uploads
+RUN mkdir -p /app/public/uploads/blog \
+    /app/public/uploads/projects/page \
+    /app/public/uploads/profile \
+    && chmod -R 755 /app/public
 
 # Expose port 5000 for development
 EXPOSE 5000
@@ -61,7 +64,10 @@ COPY --from=build /app/dist ./dist
 RUN npm ci --only=production
 
 # Make uploads dir in production
-RUN mkdir -p /app/uploads
+RUN mkdir -p /app/public/uploads/blog \
+    /app/public/uploads/projects/page \
+    /app/public/uploads/profile \
+    && chmod -R 755 /app/public
 
 # Expose port for production
 EXPOSE 5000
