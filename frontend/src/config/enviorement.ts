@@ -1,6 +1,8 @@
+// src/config/environment.ts
 
 interface Environment {
   API_URL: string;
+  PROJECT_DOMAIN: string;
   // Add other environment variables as needed
 }
 
@@ -33,7 +35,8 @@ async function getEnvValue(key: string, defaultValue: string = ''): Promise<stri
 
 async function initializeEnv(): Promise<Environment> {
   return {
-    API_URL: await getEnvValue('VITE_API_URL', 'https://localhost:5443/api'),
+    API_URL: await getEnvValue('VITE_API_URL', 'https://api.example.com'),
+    PROJECT_DOMAIN: await getEnvValue('VITE_PROJECT_DOMAIN', 'yourdomain.com'),
     // Add other environment variables here
   };
 }
