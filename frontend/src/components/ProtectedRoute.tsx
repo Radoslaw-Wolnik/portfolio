@@ -1,36 +1,31 @@
 // src/components/ProtectedRoute.tsx
-import React, { useEffect, useRef } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useModal } from '../hooks/useModal';
-import LoginForm from './LoginForm';
+import React from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '@hooks/useAuth';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  adminOnly?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
-  const { openModal } = useModal();
-  const hasOpenedModal = useRef(false);
-
-  useEffect(() => {
-    if (!user && !loading && !hasOpenedModal.current) {
-      openModal(<LoginForm />);
-      hasOpenedModal.current = true;
-    }
-  }, [user, loading]);
-
-  if (loading) {
-    // Return a loading indicator while fetching user data
-    return <div>Loading...</div>;
-  }
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ adminOnly = false }) => {
+  const { user } = useAuth();
+  const location = useLocation();
 
   if (!user) {
-    // Return null or a loading indicator while waiting for the user to log in
-    return null;
+    // Redirect them to the /login page, but save the current location they were
+    // trying to go to when they were redirected. This allows us to send them
+    // along to that page after they login, which is a nicer user experience
+    // than dropping them off on the home page.
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  if (adminOnly && user.role !== 'admin') {
+    // If the route is admin-only and the user is not an admin, redirect to home
+    return <Navigate to="/" replace />;
+  }
+
+  // If the user is authenticated (and an admin if required), render the child routes
+  return <Outlet />;
 };
 
 export default ProtectedRoute;
