@@ -8,8 +8,9 @@ import logger from '../utils/logger.util';
 export const createSession = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { projectName, username } = req.body;
-    const session = await dockerSessionService.createSession(req.user!.id, projectName, username);
-    logger.info(`Docker session created`, { userId: req.user!._id, projectName, username });
+    const userId = req.user ? req.user.id : null;
+    const session = await dockerSessionService.createSession(userId, projectName, username);
+    logger.info(`Docker session created`, { userId, projectName, username });
     res.status(201).json(session);
   } catch (error) {
     next(error);
@@ -60,6 +61,17 @@ export const swapUser = async (req: AuthRequest, res: Response, next: NextFuncti
     const updatedSession = await dockerSessionService.swapUser(sessionId, newUsername);
     logger.info(`User swapped in Docker session`, { sessionId, newUsername, userId: req.user!._id });
     res.json(updatedSession);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const signalSessionExit = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user ? req.user.id : null;
+    await dockerSessionService.signalSessionExit(sessionId, userId);
+    res.json({ message: 'Session exit signal received' });
   } catch (error) {
     next(error);
   }

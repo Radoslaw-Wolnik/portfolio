@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
 import getEnv from '../config/environment';
-import { useAuth } from '@hooks/useAuth';
 
 interface ProjectCardProps {
   project: Project;
@@ -12,7 +11,7 @@ const PublicProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   const [loading, setLoading] = useState(false);
   const [projectDomain, setProjectDomain] = useState('');
   const [currentProject, setCurrentProject] = useState(project);
-  const { signalProjectExit } = useAuth();
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadEnvironment = async () => {
@@ -39,15 +38,30 @@ const PublicProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
     if (currentProject.status === 'frozen') {
       await handleProjectAction('unfreeze');
     }
-    const projectUrl = `https://${currentProject.subdomain}.${projectDomain}`;
-    const newWindow = window.open(projectUrl, '_blank');
-    
-    if (newWindow) {
-      newWindow.addEventListener('beforeunload', () => {
-        signalProjectExit(currentProject.id);
+    setLoading(true);
+    try {
+      const response = await api.post('/api/docker-sessions', {
+        projectName: currentProject.name,
+        username: 'public_user' // You might want to generate a unique username for each public session
       });
+      setSessionId(response.data.sessionId);
+      const projectUrl = `https://${currentProject.subdomain}.${projectDomain}`;
+      window.open(projectUrl, '_blank');
+    } catch (error) {
+      console.error('Error starting public demo:', handleApiError(error));
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (sessionId) {
+        api.post(`/api/docker-sessions/${sessionId}/signal-exit`)
+          .catch(error => console.error('Error signaling session exit:', handleApiError(error)));
+      }
+    };
+  }, [sessionId]);
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6">

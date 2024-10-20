@@ -2,6 +2,7 @@ import Project, { IProject, IContainer } from '../models/project.model';
 import { NotFoundError, BadRequestError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
 import { dockerService } from './docker.service';
+import { dockerSessionService } from './docker-session.service';
 import { networkService } from './network.service';
 
 export class ProjectService {
@@ -138,6 +139,33 @@ export class ProjectService {
 
     return { totalProjects, runningProjects, stoppedProjects, frozenProjects };
   }
+
+  async signalPublicProjectExit(projectId: string): Promise<void> {
+    const project = await this.getProjectById(projectId);
+    if (!project) {
+      throw new NotFoundError('Project not found');
+    }
+
+    // Schedule project freeze after 5 minutes
+    setTimeout(async () => {
+      try {
+        const updatedProject = await this.getProjectById(projectId);
+        if (updatedProject && updatedProject.status !== 'frozen') {
+          // Check if there are any active sessions
+          const activeSessions = await dockerSessionService.getActiveSessionsForProject(project.name);
+          if (activeSessions.length === 0) {
+            await this.freezeProject(projectId);
+            logger.info(`Public project ${project.name} has been frozen due to inactivity.`);
+          }
+        }
+      } catch (error) {
+        logger.error(`Failed to freeze public project ${project.name} after inactivity`, error);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    logger.info(`Exit signal received for public project: ${project.name}`);
+  }
+
 }
 
 export const projectService = new ProjectService();

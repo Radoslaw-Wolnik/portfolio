@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Response, NextFunction, Request } from 'express';
 // import { AuthRequest } from '../types/global';
 import { projectService } from '../services/project.service';
 import { NotFoundError, BadRequestError } from '../utils/custom-errors.util';
@@ -103,6 +103,17 @@ export const getProjectStats = async (req: AuthRequest, res: Response, next: Nex
     next(error);
   }
 };
+
+export const signalPublicProjectExit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { id } = req.params;
+    await projectService.signalPublicProjectExit(id);
+    res.json({ message: 'Public project exit signal received' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 /*
 

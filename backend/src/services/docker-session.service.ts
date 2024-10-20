@@ -3,10 +3,16 @@ import DockerSession, { IDockerSession } from '../models/docker-session.model';
 import { NotFoundError, BadRequestError, InternalServerError } from '../utils/custom-errors.util';
 import logger from '../utils/logger.util';
 import { dockerService } from './docker.service';
+import Project from '../models/project.model';
 
 class DockerSessionService {
-  async createSession(userId: string, projectName: string, username: string): Promise<IDockerSession> {
+  async createSession(userId: string | null, projectName: string, username: string): Promise<IDockerSession> {
     try {
+      const project = await Project.findOne({ name: projectName });
+      if (!project) {
+        throw new NotFoundError('Project not found');
+      }
+
       const sessionId = uuidv4();
       const containerSessionId = await dockerService.createExec(projectName, ['su', '-', username]);
 
@@ -17,7 +23,8 @@ class DockerSessionService {
         username,
         containerSessionId,
         startTime: new Date(),
-        status: 'active'
+        status: 'active',
+        isPublic: !userId // If userId is null, it's a public session
       });
 
       await session.save();
@@ -124,7 +131,76 @@ class DockerSessionService {
       throw new InternalServerError('Failed to swap user in Docker session');
     }
   }
-  
+
+  async signalSessionExit(sessionId: string, userId: string | null): Promise<void> {
+    const session = await this.getSession(sessionId);
+    if (session.userId && session.userId.toString() !== userId) {
+      throw new BadRequestError('Unauthorized to signal exit for this session');
+    }
+
+    if (session.status !== 'active') {
+      throw new BadRequestError('Session is already inactive');
+    }
+
+    try {
+      // Mark the session as terminated in the database
+      session.status = 'terminated';
+      session.endTime = new Date();
+      await session.save();
+
+      // Schedule session cleanup after 5 minutes
+      setTimeout(async () => {
+        try {
+          await this.cleanupSession(sessionId);
+        } catch (error) {
+          logger.error(`Failed to cleanup session ${sessionId} after exit`, error);
+        }
+      }, 5 * 60 * 1000); // 5 minutes
+
+      logger.info(`Exit signal received for session: ${sessionId}`);
+    } catch (error) {
+      logger.error(`Failed to signal session exit: ${sessionId}`, error);
+      throw new InternalServerError('Failed to signal session exit');
+    }
+  }
+
+  private async cleanupSession(sessionId: string): Promise<void> {
+    const session = await this.getSession(sessionId);
+    if (session.status === 'terminated') {
+      try {
+        const project = await Project.findOne({ name: session.projectName });
+        if (!project) {
+          throw new NotFoundError('Project not found');
+        }
+
+        // Stop the container
+        await dockerService.stopContainer(session.projectName, project.dockerComposeFile);
+
+        // Remove the session from the database
+        await DockerSession.findByIdAndDelete(session._id);
+
+        logger.info(`Session cleaned up: ${sessionId}`);
+      } catch (error) {
+        logger.error(`Failed to cleanup session: ${sessionId}`, error);
+        throw new InternalServerError('Failed to cleanup session');
+      }
+    }
+  }
+
+  async getActiveSessionsForProject(projectName: string): Promise<IDockerSession[]> {
+    try {
+      const activeSessions = await DockerSession.find({
+        projectName: projectName,
+        status: 'active'
+      });
+
+      logger.info(`Retrieved ${activeSessions.length} active sessions for project: ${projectName}`);
+      return activeSessions;
+    } catch (error) {
+      logger.error(`Failed to retrieve active sessions for project: ${projectName}`, error);
+      throw new InternalServerError('Failed to retrieve active sessions for project');
+    }
+  }
 }
 
 export const dockerSessionService = new DockerSessionService();
