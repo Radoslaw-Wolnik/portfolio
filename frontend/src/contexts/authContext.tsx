@@ -10,6 +10,7 @@ interface AuthContextType {
   loginDemo: (username: string, password: string, projectId: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  refreshToken: () => Promise<void>;
   signalProjectExit: (projectId: string) => Promise<void>;
 }
 
@@ -43,6 +44,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshToken = useCallback(async () => {
+    try {
+      if (user && 'role' in user) {
+        // Regular user
+        await api.post<{ message: string }>('/api/auth/refresh-token');
+      } else if (user) {
+        // Demo user
+        await api.post<{ message: string }>('/api/auth/refresh-demo-token');
+      }
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      setUser(null);
+    }
+  }, [user]);
+
   const signalProjectExit = async (projectId: string) => {
     await api.post(`/api/projects/${projectId}/signal-exit`);
   };
@@ -52,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginDemo, logout, refreshUser, signalProjectExit }}>
+    <AuthContext.Provider value={{ user, loading, login, loginDemo, logout, refreshUser, refreshToken, signalProjectExit }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,3 @@
-// src/components/TokenRefresh.tsx
 import React, { useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -7,7 +6,7 @@ const TokenRefresh: React.FC = () => {
 
   useEffect(() => {
     const refreshInterval = setInterval(() => {
-      refreshToken().catch(error => {
+      refreshToken().catch((error: Error) => {
         console.error('Failed to refresh token:', error);
       });
     }, 45 * 60 * 1000); // 45 minutes
