@@ -1,23 +1,18 @@
 // src/layouts/LandingPageLayout.tsx
 import React from 'react';
-import { Outlet } from 'react-router-dom';
 import Header from '@components/Header';
 import Footer from '@components/Footer';
-import { useAuth } from '@/contexts/AuthContext';
-import LoadingSpinner from '@components/LoadingSpinner';
 
-const LandingPageLayout: React.FC = () => {
-  const { loading } = useAuth();
+interface LandingPageLayoutProps {
+  children: React.ReactNode;
+}
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
+const LandingPageLayout: React.FC<LandingPageLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <Outlet />
+        {children}
       </main>
       <Footer />
     </div>

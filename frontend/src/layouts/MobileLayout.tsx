@@ -1,24 +1,18 @@
 // src/layouts/MobileLayout.tsx
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import React from 'react';
 import MobileHeader from '@components/MobileHeader';
 import Footer from '@components/Footer';
-import { useAuth } from '@/contexts/AuthContext';
-import LoadingSpinner from '@components/LoadingSpinner';
 
-const MobileLayout: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { loading } = useAuth();
+interface MobileLayoutProps {
+  children: React.ReactNode;
+}
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
+const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
-      <MobileHeader isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+      <MobileHeader />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <Outlet />
+        {children}
       </main>
       <Footer />
     </div>
