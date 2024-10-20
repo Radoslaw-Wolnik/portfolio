@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@hooks/useAuth';
-import api from '@utils/api';
-import { handleApiError } from '@utils/errorHandler';
+import { useAuth } from '@/hooks/useAuth';
+import api from '@/utils/api';
+import { handleApiError } from '@/utils/errorHandler';
 import getEnv from '../config/environment';
 
 interface DemoUserProjectCardProps {

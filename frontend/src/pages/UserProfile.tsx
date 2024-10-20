@@ -1,9 +1,9 @@
 // src/pages/UserProfile.tsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@hooks/useAuth';
-import * as userApi from '../api/user';
-import { handleApiError } from '@utils/errorHandler';
-import LoadingSpinner from '@components/LoadingSpinner';
+import { useAuth } from '@/hooks/useAuth';
+import * as userApi from '@/api/user';
+import { handleApiError } from '@/utils/errorHandler';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const UserProfile: React.FC = () => {
   const { user, refreshUser } = useAuth();

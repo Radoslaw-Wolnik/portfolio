@@ -1,8 +1,8 @@
 // src/App.tsx
 import React from 'react';
-import { useDevice } from '@hooks/useDevice';
+import { useDevice } from '@/hooks/useDevice';
 import AppRoutes from './AppRoutes';
-import TokenRefresh from '@components/TokenRefresh';
+import TokenRefresh from '@/components/TokenRefresh';
 import MobileLayout from './layouts/MobileLayout';
 import LandingPageLayout from './layouts/LandingPageLayout';
 

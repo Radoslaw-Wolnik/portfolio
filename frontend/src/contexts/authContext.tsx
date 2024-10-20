@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import api from '@utils/api';
+import api from '@/utils/api';
 
 type UserType = User | DemoUser | null;
 

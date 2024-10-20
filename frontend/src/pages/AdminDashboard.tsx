@@ -1,7 +1,7 @@
 // src/pages/AdminDashboard.tsx
 import React, { useState, useEffect } from 'react';
-import api from '@utils/api';
-import { handleApiError } from '@utils/errorHandler';
+import api from '@/utils/api';
+import { handleApiError } from '@/utils/errorHandler';
 
 const AdminDashboard: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
