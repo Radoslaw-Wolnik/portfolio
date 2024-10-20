@@ -1,6 +1,6 @@
 // src/config/environment.ts
 
-interface Environment {
+export interface Environment {
   API_URL: string;
   PROJECT_DOMAIN: string;
   // Add other environment variables as needed
