@@ -30,8 +30,13 @@ const DemoProject: React.FC<DemoProjectProps> = ({ project }) => {
       const response = await projectApi.deployProject(project.id);
       if (response.data.message === 'Project deployed successfully') {
         const sessionResponse = await dockerSessionApi.createSession(project.name, 'demo_user');
-        setDemoUser(sessionResponse.data.data);
-        await loginDemo(sessionResponse.data.data.username, 'demo_password', project.id);
+        const newDemoUser: DemoUser = {
+          id: sessionResponse.data.userId,
+          username: sessionResponse.data.username,
+          projectId: project.id
+        };
+        setDemoUser(newDemoUser);
+        await loginDemo(newDemoUser.username, 'demo_password', project.id);
       }
     } catch (error) {
       console.error('Error starting demo:', handleApiError(error));
@@ -45,7 +50,11 @@ const DemoProject: React.FC<DemoProjectProps> = ({ project }) => {
     setLoading(true);
     try {
       const response = await dockerSessionApi.swapUser(demoUser.id, newUsername);
-      setDemoUser(response.data.data);
+      const updatedDemoUser: DemoUser = {
+        ...demoUser,
+        username: response.data.username
+      };
+      setDemoUser(updatedDemoUser);
     } catch (error) {
       console.error('Error swapping user:', handleApiError(error));
     } finally {
