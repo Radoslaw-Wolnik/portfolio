@@ -9,10 +9,11 @@ import {
   deleteBlogPost,
   searchBlogPosts
 } from '../controllers/blog-post.controller';
+import { uploadBlogImages } from '../middleware/upload.middleware';
 
 const router = express.Router();
 
-router.post('/blog-posts', authenticateJWT, createBlogPost);
+router.post('/blog-posts', authenticateJWT, uploadBlogImages, createBlogPost);
 router.get('/blog-posts', getBlogPosts);
 router.get('/blog-posts/:id', getBlogPostById);
 router.put('/blog-posts/:id', authenticateJWT, updateBlogPost);

@@ -9,7 +9,8 @@ export const createBlogPost = async (req: AuthRequest, res: Response, next: Next
   try {
     const blogPost = new BlogPost({
       ...req.body,
-      author: req.user!._id
+      author: req.user!._id,
+      images: req.files ? (req.files as Express.Multer.File[]).map(file => file.path.replace('public/', '')) : []
     });
     await blogPost.save();
     logger.info(`Blog post created: ${blogPost._id}`, { userId: req.user!._id });
@@ -17,7 +18,7 @@ export const createBlogPost = async (req: AuthRequest, res: Response, next: Next
   } catch (error) {
     next(error);
   }
-}
+};
 
 export const getBlogPosts = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {

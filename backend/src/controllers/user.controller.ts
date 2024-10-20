@@ -20,23 +20,24 @@ export const getUserProfile = async(req: AuthRequest, res: Response, next: NextF
 export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { username } = req.body;
+    const profileImage = req.file ? req.file.path.replace('public/', '') : undefined;
 
-    const user = await User.findById(req.user!._id);
+    const user = await User.findByIdAndUpdate(
+      req.user!._id,
+      { username, ...(profileImage && { profileImage }) },
+      { new: true, runValidators: true }
+    ).select('-password');
+
     if (!user) {
       throw new NotFoundError('User not found');
     }
 
-    if (username) user.username = username;
-
-    await user.save();
     logger.info('User profile updated', { userId: req.user!._id });
-
-    const updatedUserResponse = user.toJSON();
-    res.json(updatedUserResponse);
+    res.json(user);
   } catch (error) {
     next(error);
   }
-}
+};
 
 export const getAllUsers = async(req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
