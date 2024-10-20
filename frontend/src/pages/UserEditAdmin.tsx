@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
-import { User } from '@types/api';
 import LoadingSpinner from '@components/LoadingSpinner';
 
 const UserEditAdmin: React.FC = () => {

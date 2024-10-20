@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
-import { BlogPost, BlogContent } from '@types/api';
 
 const BlogPostEditor: React.FC = () => {
   const { id } = useParams<{ id?: string }>();

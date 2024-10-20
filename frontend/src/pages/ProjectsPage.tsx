@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
-import { Project } from '@types/api';
 import DemoProject from '@components/DemoProject';
 import LoadingSpinner from '@components/LoadingSpinner';
 

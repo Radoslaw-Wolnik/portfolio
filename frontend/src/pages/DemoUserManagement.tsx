@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
-import { DemoUser, Project } from '@types/api';
 import LoadingSpinner from '@components/LoadingSpinner';
 
 const DemoUserManagement: React.FC = () => {

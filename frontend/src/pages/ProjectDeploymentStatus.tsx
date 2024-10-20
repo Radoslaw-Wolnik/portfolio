@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
-import { Project } from '@types/api';
 import LoadingSpinner from '@components/LoadingSpinner';
 
 interface DeploymentStatus extends Project {
-  status: 'deployed' | 'deploying' | 'failed' | 'stopped';
+  deployment: 'deployed' | 'deploying' | 'failed'; // htere is no deployment status in actual project add it and functions ?
   lastDeploymentTime?: string;
 }
 
@@ -70,12 +69,12 @@ const ProjectDeploymentStatus: React.FC = () => {
             <p className="mb-2">
               Status: 
               <span className={`font-semibold ${
-                project.status === 'deployed' ? 'text-green-600' :
-                project.status === 'deploying' ? 'text-yellow-600' :
-                project.status === 'failed' ? 'text-red-600' :
+                project.deployment === 'deployed' ? 'text-green-600' :
+                project.deployment === 'deploying' ? 'text-yellow-600' :
+                project.deployment === 'failed' ? 'text-red-600' :
                 'text-gray-600'
               }`}>
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                {project.deployment.charAt(0).toUpperCase() + project.deployment.slice(1)}
               </span>
             </p>
             {project.lastDeploymentTime && (
@@ -86,7 +85,7 @@ const ProjectDeploymentStatus: React.FC = () => {
             <div className="flex space-x-2">
               <button
                 onClick={() => handleDeploy(project.id)}
-                disabled={project.status === 'deploying'}
+                disabled={project.deployment === 'deploying'}
                 className="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600 disabled:opacity-50"
               >
                 Deploy

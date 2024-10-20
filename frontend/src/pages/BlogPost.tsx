@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import * as blogApi from '@api/blog';
+import * as blogApi from '../api/blog';
 import { handleApiError } from '@utils/errorHandler';
 import LoadingSpinner from '@components/LoadingSpinner';
-import BlogContent from '@components/BlogContent';
+import BlogContent from '../components/BlogContent';
 
 const BlogPost: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +15,7 @@ const BlogPost: React.FC = () => {
     const fetchPost = async () => {
       try {
         const response = await blogApi.getBlogPostById(id as string);
-        setPost(response.data.data);
+        setPost(response.data);
       } catch (err) {
         setError(handleApiError(err));
       } finally {

@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
-import { Project, BlogPost } from '@types/api';
 
 const AdminDashboard: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -48,7 +47,7 @@ const AdminDashboard: React.FC = () => {
             <li key={post.id} className="bg-white shadow rounded p-4">
               <h3 className="text-xl font-semibold">{post.title}</h3>
               <p className="text-sm text-gray-500 mt-2">
-                By {post.author.username} on {new Date(post.createdAt).toLocaleDateString()}
+                By {post.author} on {new Date(post.createdAt).toLocaleDateString()}
               </p>
             </li>
           ))}

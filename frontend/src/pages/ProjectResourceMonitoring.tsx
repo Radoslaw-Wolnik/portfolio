@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
-import { Project } from '@types/api';
 import LoadingSpinner from '@components/LoadingSpinner';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
