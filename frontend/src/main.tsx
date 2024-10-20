@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import getEnv from './config/enviorement';
+import getEnv from './config/environment';
 import { AppProviders } from 'providers';
 
 async function initApp() {
