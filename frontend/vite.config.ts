@@ -11,10 +11,6 @@ export default defineConfig({
     sourcemap: true  // Ensure source maps are generated
   },
   server: {
-    https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'ssl/cert/private-key.pem')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'ssl/cert/certificate.pem')),
-    },
     host: true, // This makes the server accessible externally
     port: 5173, // Optional: specify the port
     watch: {
@@ -25,5 +21,3 @@ export default defineConfig({
     },
   }
 })
-
-
