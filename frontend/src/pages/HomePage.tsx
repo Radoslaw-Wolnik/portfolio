@@ -1,14 +1,17 @@
 // src/pages/HomePage.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@hooks/useAuth';
 
 const HomePage: React.FC = () => {
+  const { user } = useAuth();
+
   return (
     <div className="space-y-12">
       <section className="text-center">
         <h1 className="text-5xl font-bold mb-4">Welcome to My Portfolio</h1>
         <p className="text-xl text-gray-600">
-          Hi, I'm [Your Name]. I'm a full-stack developer passionate about creating innovative web solutions.
+          {user ? `Hello, ${user.username}!` : 'Hi there! I\'m a full-stack developer passionate about creating innovative web solutions.'}
         </p>
       </section>
 

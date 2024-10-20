@@ -1,9 +1,8 @@
 // src/pages/BlogPostList.tsx
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import api from '@utils/api';
+import * as blogApi from '@api/blog';
 import { handleApiError } from '@utils/errorHandler';
-import { BlogPost } from '@types/api';
 import BlogPostCard from '@components/BlogPostCard';
 import BlogSearch from '@components/BlogSearch';
 import BlogTagFilter from '@components/BlogTagFilter';
@@ -22,12 +21,13 @@ const BlogPostList: React.FC = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await api.get('/blog-posts', { params: { tag: currentTag } });
-        setPosts(response.data);
+        const response = await blogApi.getBlogPosts(1, 10, currentTag || undefined);
+        setPosts(response.data.data.blogPosts);
         
         // Fetch all unique tags
-        const tagsResponse = await api.get('/blog-posts/tags');
-        setTags(tagsResponse.data);
+        const tagsResponse = await blogApi.getBlogPosts(1, 1000); // Assuming this endpoint returns tags
+        const allTags = tagsResponse.data.data.blogPosts.flatMap(post => post.tags);
+        setTags([...new Set(allTags)]);
       } catch (err) {
         setError(handleApiError(err));
       } finally {
