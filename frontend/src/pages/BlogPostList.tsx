@@ -1,12 +1,12 @@
 // src/pages/BlogPostList.tsx
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import * as blogApi from '@/api/blog';
-import { handleApiError } from '@/utils/errorHandler';
-import BlogPostCard from '@/components/BlogPostCard';
-import BlogSearch from '@/components/BlogSearch';
-import BlogTagFilter from '@/components/BlogTagFilter';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import * as blogApi from '../api/blog';
+import { handleApiError } from '../utils/errorHandler';
+import BlogPostCard from '../components/BlogPostCard';
+import BlogSearch from '../components/BlogSearch';
+import BlogTagFilter from '../components/BlogTagFilter';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const BlogPostList: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);

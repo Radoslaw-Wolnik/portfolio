@@ -1,10 +1,10 @@
 // src/pages/BlogSearchResults.tsx
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import api from '@/utils/api';
-import { handleApiError } from '@/utils/errorHandler';
-import BlogPostCard from '@/components/BlogPostCard';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import api from '../utils/api';
+import { handleApiError } from '../utils/errorHandler';
+import BlogPostCard from '../components/BlogPostCard';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const BlogSearchResults: React.FC = () => {
   const location = useLocation();

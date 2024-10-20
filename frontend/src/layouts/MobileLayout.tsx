@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import MobileHeader from '@/components/MobileHeader';
-import Footer from '@/components/Footer';
+import MobileHeader from '../components/MobileHeader';
+import Footer from '../components/Footer';
 
 interface MobileLayoutProps {
   children: React.ReactNode;

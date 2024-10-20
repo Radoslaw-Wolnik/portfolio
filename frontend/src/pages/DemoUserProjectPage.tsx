@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import api from '@/utils/api';
-import { handleApiError } from '@/utils/errorHandler';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import DemoUserProjectCard from '@/components/DemoUserProjectCard';
+import api from '../utils/api';
+import { handleApiError } from '../utils/errorHandler';
+import LoadingSpinner from '../components/LoadingSpinner';
+import DemoUserProjectCard from '../components/DemoUserProjectCard';
 
 const DemoUserProjectPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);

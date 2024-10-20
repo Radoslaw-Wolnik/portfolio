@@ -19,13 +19,7 @@
     "jsx": "react-jsx",
     "baseUrl": "src",
     "paths": {
-      "@/*": ["*"],
-      "@types/*": ["types/*"],
-      "@components/*": ["components/*"],
-      "@pages/*": ["pages/*"],
-      "@utils/*": ["utils/*"],
-      "@hooks/*": ["hooks/*"],
-      "@contexts/*": ["contexts/*"]
+      "@/*": ["*"]
     }
   },
   "include": ["src", "tailwind.config.js"]

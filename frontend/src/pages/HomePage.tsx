@@ -1,7 +1,7 @@
 // src/pages/HomePage.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();

@@ -1,8 +1,8 @@
 // src/pages/ProjectResourceMonitoring.tsx
 import React, { useState, useEffect } from 'react';
-import api from '@/utils/api';
-import { handleApiError } from '@/utils/errorHandler';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import api from '../utils/api';
+import { handleApiError } from '../utils/errorHandler';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 

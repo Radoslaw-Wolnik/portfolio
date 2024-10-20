@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import * as blogApi from '@/api/blog';
-import { handleApiError } from '@/utils/errorHandler';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import BlogContent from '@/components/BlogContent';
+import * as blogApi from '../api/blog';
+import { handleApiError } from '../utils/errorHandler';
+import LoadingSpinner from '../components/LoadingSpinner';
+import BlogContent from '../components/BlogContent';
 
 const BlogPost: React.FC = () => {
   const { id } = useParams<{ id: string }>();

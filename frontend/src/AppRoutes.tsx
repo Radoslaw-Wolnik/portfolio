@@ -2,31 +2,31 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-import ProtectedRoute from '@/components/ProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute';
 
 
 // Public Pages
-import HomePage from '@/pages/HomePage';
-import BlogPostList from '@/pages/BlogPostList';
-import BlogPost from '@/pages/BlogPost';
-import BlogSearchResults from '@/pages/BlogSearchResults';
+import HomePage from './pages/HomePage';
+import BlogPostList from './pages/BlogPostList';
+import BlogPost from './pages/BlogPost';
+import BlogSearchResults from './pages/BlogSearchResults';
 import PublicProjectPage from './pages/PublicProjectPage';
 import DemoUserProjectPage from './pages/DemoUserProjectPage';
-import Login from '@/pages/Login';
+import Login from './pages/Login';
 
 // Protected Pages
-import UserProfile from '@/pages/UserProfile';
+import UserProfile from './pages/UserProfile';
 
 // Admin Pages
-import AdminDashboard from '@/pages/AdminDashboard';
-import BlogPostEditor from '@/pages/BlogPostEditor';
-import ProjectManagement from '@/pages/ProjectManagement';
-import UserListAdmin from '@/pages/UserListAdmin';
-import UserEditAdmin from '@/pages/UserEditAdmin';
-import SiteSettingsAdmin from '@/pages/SiteSettingsAdmin';
-import ProjectDeploymentStatus from '@/pages/ProjectDeploymentStatus';
-import ProjectResourceMonitoring from '@/pages/ProjectResourceMonitoring';
-import DemoUserManagement from '@/pages/DemoUserManagement';
+import AdminDashboard from './pages/AdminDashboard';
+import BlogPostEditor from './pages/BlogPostEditor';
+import ProjectManagement from './pages/ProjectManagement';
+import UserListAdmin from './pages/UserListAdmin';
+import UserEditAdmin from './pages/UserEditAdmin';
+import SiteSettingsAdmin from './pages/SiteSettingsAdmin';
+import ProjectDeploymentStatus from './pages/ProjectDeploymentStatus';
+import ProjectResourceMonitoring from './pages/ProjectResourceMonitoring';
+import DemoUserManagement from './pages/DemoUserManagement';
 
 
 const AppRoutes: React.FC = () => (

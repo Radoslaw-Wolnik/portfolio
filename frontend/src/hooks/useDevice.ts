@@ -1,6 +1,6 @@
 // src/hooks/useDevice.ts
 import { useContext } from 'react';
-import { DeviceContext } from '@/contexts/DeviceContext';
+import { DeviceContext } from '../contexts/DeviceContext';
 
 export const useDevice = () => {
   const context = useContext(DeviceContext);
