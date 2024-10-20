@@ -2,6 +2,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@contexts/AuthContext';
+import { useAuth } from '@hooks/useAuth';
+import TokenRefresh from '@components/TokenRefresh';
 import ProtectedRoute from '@components/ProtectedRoute';
 
 // Layouts
@@ -14,10 +16,6 @@ import BlogPost from '@pages/BlogPost';
 import BlogSearchResults from '@pages/BlogSearchResults';
 import ProjectsPage from '@pages/ProjectsPage';
 import Login from '@pages/Login';
-import RegisterPage from '@pages/RegisterPage';
-import ForgotPasswordPage from '@pages/ForgotPasswordPage';
-import ResetPasswordPage from '@pages/ResetPasswordPage';
-import EmailVerificationPage from '@pages/EmailVerificationPage';
 
 // Protected Pages
 import UserProfile from '@pages/UserProfile';
@@ -33,10 +31,22 @@ import ProjectDeploymentStatus from '@pages/ProjectDeploymentStatus';
 import ProjectResourceMonitoring from '@pages/ProjectResourceMonitoring';
 import DemoUserManagement from '@pages/DemoUserManagement';
 
+const AuthenticatedApp: React.FC = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return null;
+  }
+
+  return <TokenRefresh />;
+};
+
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
+        <AuthenticatedApp />
         <Routes>
           <Route element={<LandingPageLayout />}>
             {/* Public Routes */}
