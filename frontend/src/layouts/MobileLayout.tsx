@@ -1,12 +1,13 @@
-// src/layouts/LandingPageLayout.tsx
-import React from 'react';
+// src/layouts/MobileLayout.tsx
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Header from '@components/Header';
+import MobileHeader from '@components/MobileHeader';
 import Footer from '@components/Footer';
 import { useAuth } from '@contexts/AuthContext';
 import LoadingSpinner from '@components/LoadingSpinner';
 
-const LandingPageLayout: React.FC = () => {
+const MobileLayout: React.FC = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { loading } = useAuth();
 
   if (loading) {
@@ -15,7 +16,7 @@ const LandingPageLayout: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <MobileHeader isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
       <main className="flex-grow container mx-auto px-4 py-8">
         <Outlet />
       </main>
@@ -24,4 +25,4 @@ const LandingPageLayout: React.FC = () => {
   );
 };
 
-export default LandingPageLayout;
+export default MobileLayout;
