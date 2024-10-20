@@ -11,6 +11,7 @@ export interface IDockerSession extends Document {
   lastActivityTime: Date;
   lastSwitchTime?: Date;
   status: 'active' | 'terminated';
+  isPublic: Boolean;
 }
 
 const dockerSessionSchema = new Schema<IDockerSession>({
@@ -24,6 +25,7 @@ const dockerSessionSchema = new Schema<IDockerSession>({
   lastActivityTime: { type: Date, default: Date.now },
   lastSwitchTime: { type: Date },
   status: { type: String, enum: ['active', 'terminated'], default: 'active' },
+  isPublic: {type: Boolean, default: false},
 });
 
 dockerSessionSchema.index({ userId: 1, status: 1 });
