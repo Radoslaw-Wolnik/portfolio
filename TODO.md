@@ -3,6 +3,7 @@
     - [ ] add functions to check status in controller
     - [ ] add util to change status? overkill
     - [ ] change status in service that deploys project
+ - do i have token refresth (mostly for demo users but for normal one too)
 
 ## Frontend
  - use projexct.domain to set project domains
