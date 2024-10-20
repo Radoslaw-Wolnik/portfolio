@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '@utils/api';
 import { handleApiError } from '@utils/errorHandler';
-import { BlogPost } from '@types/api';
-import BlogPostCard from '@components/BlogPostCard';
+import BlogPostCard from '../components/BlogPostCard';
 import LoadingSpinner from '@components/LoadingSpinner';
 
 const BlogSearchResults: React.FC = () => {
