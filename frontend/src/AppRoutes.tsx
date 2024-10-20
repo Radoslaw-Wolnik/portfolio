@@ -10,7 +10,8 @@ import HomePage from '@pages/HomePage';
 import BlogPostList from '@pages/BlogPostList';
 import BlogPost from '@pages/BlogPost';
 import BlogSearchResults from '@pages/BlogSearchResults';
-import ProjectsPage from '@pages/ProjectsPage';
+import PublicProjectPage from './pages/PublicProjectPage';
+import DemoUserProjectPage from './pages/DemoUserProjectPage';
 import Login from '@pages/Login';
 
 // Protected Pages
@@ -35,7 +36,8 @@ const AppRoutes: React.FC = () => (
           <Route path="/blog" element={<BlogPostList />} />
           <Route path="/blog/:id" element={<BlogPost />} />
           <Route path="/blog/search" element={<BlogSearchResults />} />
-          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/public-projects" element={<PublicProjectPage />} />
+          <Route path="/demo-user-projects" element={<DemoUserProjectPage />} />
           <Route path="/login" element={<Login />} />
   
           {/* Protected Routes */}
