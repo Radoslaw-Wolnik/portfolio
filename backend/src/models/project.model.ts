@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-
+// add deployment in controllers and services that do deploy project to update it
 export interface IContainer {
   name: string;
   port: number;
@@ -12,6 +12,7 @@ export interface IProject extends Document {
   branch: string;
   dockerComposeFile: string;
   subdomain: string;
+  deployment: 'finished' | 'deploying' | 'failed' | 'none';
   status: 'running' | 'stopped' | 'error' | 'frozen';
   containers: IContainer[];
 }
@@ -28,6 +29,7 @@ const projectSchema = new Schema<IProject>({
   branch: { type: String, required: true, default: 'main' },
   dockerComposeFile: { type: String, required: true, default: 'docker-compose.yml' },
   subdomain: { type: String, required: true, unique: true },
+  deployment: { type: String, enum: ['finished', 'deploying', 'failed', 'none'], default: 'none' }, // add the controllers for that (checking, changing etc) and in the service add stauses
   status: { type: String, enum: ['running', 'stopped', 'error', 'frozen'], default: 'stopped' },
   containers: [containerSchema]
 });
