@@ -1,49 +1,58 @@
-// src/contexts/AuthContext.tsx
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import api from '@utils/api';
 
+type UserType = User | DemoUser | null;
+
 interface AuthContextType {
-  user: User | DemoUser | null;
+  user: UserType;
   loading: boolean;
-  refreshToken: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  loginDemo: (username: string, password: string, projectId: string) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  signalProjectExit: (projectId: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | DemoUser | null>(null);
+  const [user, setUser] = useState<UserType>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshToken = useCallback(async () => {
+  const login = async (email: string, password: string) => {
+    const response = await api.post<{ user: User; message: string }>('/api/auth/login', { email, password });
+    setUser(response.data.user);
+  };
+
+  const loginDemo = async (username: string, password: string, projectId: string) => {
+    const response = await api.post<{ demoUser: DemoUser; message: string }>('/api/auth/login-demo', { username, password, projectId });
+    setUser(response.data.demoUser);
+  };
+
+  const logout = async () => {
+    await api.post('/api/auth/logout');
+    setUser(null);
+  };
+
+  const refreshUser = async () => {
     try {
-      // Assuming there's an endpoint for refreshing the token
-      await api.post('/auth/refresh-token');
-      // After refreshing, fetch the updated user profile
-      const response = await api.get<ApiResponse<User>>('/users/profile');
-      setUser(response.data.data);
+      const response = await api.get<User>('/api/users/profile');
+      setUser(response.data);
     } catch (error) {
-      console.error('Failed to refresh token:', error);
       setUser(null);
     }
-  }, []);
+  };
+
+  const signalProjectExit = async (projectId: string) => {
+    await api.post(`/api/projects/${projectId}/signal-exit`);
+  };
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await api.get<ApiResponse<User>>('/users/profile');
-        setUser(response.data.data);
-      } catch (error) {
-        console.error('Failed to get user profile:', error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuth();
+    refreshUser().finally(() => setLoading(false));
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshToken }}>
+    <AuthContext.Provider value={{ user, loading, login, loginDemo, logout, refreshUser, signalProjectExit }}>
       {children}
     </AuthContext.Provider>
   );
