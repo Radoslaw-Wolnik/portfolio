@@ -1,57 +1,33 @@
-// hooks/useAuth.ts
-import { useState, useEffect, useCallback } from 'react';
-import * as authApi from '../api/auth';
-import { User } from '@types/api';
+// src/hooks/useAuth.ts
+import { useContext } from 'react';
+import { AuthContext } from '@contexts/AuthContext';
+import api from '@utils/api';
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
 
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const response = await authApi.login(email, password);
-      setUser(response.data);
-      return response;
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
-  }, []);
+  const login = async (email: string, password: string): Promise<void> => {
+    const response = await api.post<ApiResponse<User>>('/auth/login', { email, password });
+    context.user = response.data.data;
+  };
 
-  const logout = useCallback(async () => {
-    try {
-      await authApi.logout();
-      setUser(null);
-    } catch (error) {
-      console.error('Logout failed:', error);
-      throw error;
-    }
-  }, []);
+  const loginDemo = async (username: string, password: string, projectId: string): Promise<void> => {
+    const response = await api.post<ApiResponse<DemoUser>>('/auth/login-demo', { username, password, projectId });
+    context.user = response.data.data;
+  };
 
-  const refreshToken = useCallback(async () => {
-    try {
-      await authApi.refreshToken();
-      // You might want to update the user here if the backend returns updated user info
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      setUser(null);
-    }
-  }, []);
+  const logout = async (): Promise<void> => {
+    await api.post('/auth/logout');
+    context.user = null;
+  };
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await authApi.getUserProfile();
-        setUser(response.data);
-      } catch (error) {
-        console.error('Failed to get user profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const refreshUser = async (): Promise<void> => {
+    const response = await api.get<ApiResponse<User>>('/users/profile');
+    context.user = response.data.data;
+  };
 
-    checkAuth();
-  }, []);
-
-  return { user, login, logout, refreshToken, loading };
+  return { ...context, login, loginDemo, logout, refreshUser };
 };
