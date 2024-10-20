@@ -1,7 +1,6 @@
 // src/utils/api.ts
 import axios from 'axios';
-import getEnv from '@/config/environment';
-import { useEnvironment } from '@/hooks/useEnvironment';
+import { useEnvironment } from '../hooks/useEnvironment';
 
 const env = useEnvironment();
 

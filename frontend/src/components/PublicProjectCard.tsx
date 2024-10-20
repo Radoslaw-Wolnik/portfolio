@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { handleApiError } from '../utils/errorHandler';
-import { useEnvironment } from '@/hooks/useEnvironment';
+import { useEnvironment } from '../hooks/useEnvironment';
 
 interface ProjectCardProps {
   project: Project;
